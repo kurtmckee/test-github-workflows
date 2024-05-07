@@ -1,0 +1,24 @@
+on:
+  push: null
+
+jobs:
+  test:
+    name: "Test cygwin"
+    runs-on: windows-2025
+    steps:
+      - name: "Install cygwin"
+        uses: "cygwin/cygwin-install-action@f2009323764960f80959895c7bc3bb30210afe4d" # v6
+        with:
+          packages: "python312"
+
+      - name: "Print bash version"
+        run: |
+          bash --version
+
+      - name: "Show cygwin Python info"
+        run: |
+          bash -c 'which python3.12'
+          bash -c 'python3.12 -VV'
+          bash -c 'python3.12 -c "import platform; print(platform.system())"'
+          bash -c 'python3.12 -c "import platform; print(platform.platform())"'
+          bash -c 'python3.12 -c "import sys; print(sys.version)"'
