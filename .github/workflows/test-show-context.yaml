@@ -1,0 +1,10 @@
+name: Show various contexts
+
+on:
+  push: null
+  workflow_dispatch: null
+
+jobs:
+  caller-show-context:
+    name: "Show Context"
+    uses: "kurtmckee/github-workflows/.github/workflows/show-context.yaml@show-context"
