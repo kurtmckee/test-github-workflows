@@ -1,0 +1,25 @@
+name: "test gh cli"
+
+on:
+  workflow_dispatch: null
+
+jobs:
+  gh-slim:
+    runs-on: "ubuntu-slim"
+    name: "gh"
+    steps:
+      - run: |
+          gh auth status
+          echo "exit code = $?"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  gh-latest:
+    runs-on: "ubuntu-latest"
+    name: "gh"
+    steps:
+      - run: |
+          gh auth status
+          echo "exit code = $?"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
