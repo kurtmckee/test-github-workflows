@@ -1,0 +1,26 @@
+name: "Create PR"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: The version to set
+        required: false
+
+jobs:
+  create-pr:
+    name: "create-pr"
+    strategy:
+      matrix:
+        include:
+          - tox-label-create-changes: "update"
+
+    permissions:
+      contents: "write"
+      pull-requests: "write"
+
+    uses: "kurtmckee/github-workflows/.github/workflows/create-pr.yaml@jinja-templates"
+    with:
+      config: "${{ toJSON(matrix) }}"
+      version: "${{ inputs.version }}"
