@@ -1,0 +1,215 @@
+# This file is a part of Kurt McKee's GitHub Workflows project.
+# https://github.com/kurtmckee/github-workflows
+# Copyright 2024-2026 Kurt McKee <contactme@kurtmckee.org>
+# SPDX-License-Identifier: MIT
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        description: |
+          The configuration object.
+        required: true
+        type: "string"
+
+env:
+  # These variables lock application versions for reproducibility.
+  PYTHON_VERSION: "[[ PYTHON_VERSION ]]"
+  UV_VERSION: "[[ UV_VERSION ]]"
+  CHECK_JSONSCHEMA_REQUIREMENTS: |
+    [[ include_requirements("check_jsonschema") | indent(4) ]]
+  TOX_REQUIREMENTS: |
+    [[ include_requirements("tox") | indent(4) ]]
+
+jobs:
+  #[#-
+  # Halt execution if an attempt is made to run the template directly.
+  # This job is enclosed in a Jinja comment and will not be rendered.
+  halt:
+    name: "Halt"
+    runs-on: "ubuntu-slim"
+    steps:
+      - name: "Halt"
+        run: |
+          echo "::error::⚠️ Do not run the workflow template directly."
+          exit 1
+  #]#
+  tox:
+    #[#-
+    # The `needs` key is in a Jinja comment and will not be rendered.
+    needs: [ "halt" ]
+    #]#
+    name: "tox"
+    runs-on: "${{ fromJSON(inputs.config).runner }}"
+    timeout-minutes: ${{ fromJSON(inputs.config).timeout-minutes || 15 }}
+    steps:
+      - name: "Export config"
+        id: "config-exporter"
+        shell: "bash"
+        # Loading the input from an environment variable avoids injection attacks.
+        env:
+          inputs_config: "${{ inputs.config }}"
+        run: |
+          echo "$inputs_config" > ".tox-config.raw.json"
+
+      - name: "Setup Python for tox config validation/transformation"
+        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+
+      - name: "Install uv"
+        uses: "astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867" # v7.1.6
+        with:
+          version: "${{ env.UV_VERSION }}"
+          enable-cache: false
+
+      # If a previous workflow run successfully validated an identical config object,
+      # a cache hit is sufficient to demonstrate that no further validation is required.
+      - name: "Check if raw tox config is already validated"
+        id: "lookup-config-cache"
+        uses: "actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb" # v5.0.1
+        with:
+          lookup-only: true
+          path: ".tox-config.raw.json"
+          key: "config-${{ hashFiles('.tox-config.raw.json') }}"
+
+      - name: "Write tox config schema"
+        if: "steps.lookup-config-cache.outputs.cache-hit == false"
+        shell: "bash"
+        env:
+          CONFIG_SCHEMA: |
+            [[ include_file("config-schema.json") | indent(12) ]]
+        run: |
+          echo "${CONFIG_SCHEMA}" > "${RUNNER_TEMP}/tox-schema.json"
+
+      - name: "Validate the raw tox config against the schema"
+        if: "steps.lookup-config-cache.outputs.cache-hit == false"
+        shell: "bash"
+        run: |
+          REQUIREMENTS_PATH="$(mktemp)"
+          echo "${CHECK_JSONSCHEMA_REQUIREMENTS}" > "${REQUIREMENTS_PATH}"
+
+          uv run \
+            --no-managed-python \
+            --no-project \
+            --with-requirements="${REQUIREMENTS_PATH}" \
+            check-jsonschema --schemafile "${RUNNER_TEMP}/tox-schema.json" --regex-variant python ".tox-config.raw.json"
+
+      - name: "Create a 'config-is-validated' cache key"
+        if: "steps.lookup-config-cache.outputs.cache-hit == false"
+        uses: "actions/cache/save@9255dc7a253b0ccc959486e2bca901246202afeb" # v5.0.1
+        with:
+          path: ".tox-config.raw.json"
+          key: "${{ steps.lookup-config-cache.outputs.cache-primary-key }}"
+
+      - name: "Transform tox config"
+        id: "config-transformer"
+        shell: "python"
+        run: |
+          [[ include_file("config_transformer.py") | indent(10) ]]
+
+      - name: "Checkout the repository"
+        uses: "actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8" # v6.0.1
+
+      - name: "Save the tox config to a file for cache-busting"
+        shell: "bash"
+        run: |
+          cat << EOF > .tox-config.json
+          ${{ env.tox-config }}
+          EOF
+
+      - name: "Calculate additional checksums"
+        if: "fromJSON(env.tox-config).cache-key-hash-files"
+        shell: "bash"
+        env:
+          FILE_PATTERNS: "${{ join(fromJSON(env.tox-config).cache-key-hash-files, ' ') }}"
+        run: |
+          # shellcheck disable=SC2086
+          for pattern in $FILE_PATTERNS; do
+              if ! ${{ runner.os == 'macOS' && 'shasum -a 1' || 'sha1sum' }} $pattern >> '.hash-files.sha'; then
+                  echo "The cache-key-hash-files pattern '$pattern' matched nothing"
+                  exit 1
+              fi
+          done
+          cat .hash-files.sha
+
+      - name: "Setup Pythons (required)"
+        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+        with:
+          python-version: "${{ fromJSON(env.tox-config).python-versions-required }}"
+          allow-prereleases: true
+
+      - name: "Detect Pythons"
+        uses: "kurtmckee/detect-pythons@4a7b361b5ee27eb35c8b5026ac757d02751d6688" # v1.1.1
+
+      - name: "Restore cache"
+        id: "restore-cache"
+        uses: "actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb" # v5.0.1
+        with:
+          path: |
+            .tox/
+            .venv/
+            ${{ fromJSON(env.tox-config).cache-paths && join(fromJSON(env.tox-config).cache-paths, '\n') }}
+          key: "${{
+            format(
+              '{0}-os={1}-hash={2}',
+              fromJSON(env.tox-config).cache-key-prefix || 'tox',
+              fromJSON(env.tox-config).runner,
+              hashFiles(
+                '.python-identifiers',
+                '.tox-config.json',
+                'tox.ini',
+                fromJSON(env.tox-config).cache-key-hash-files && '.hash-files.sha' || ''
+              )
+            )
+            }}"
+
+      - name: "Identify .venv path"
+        shell: "bash"
+        run: |
+          echo 'venv-path=.venv/${{ runner.os == 'Windows' && 'Scripts' || 'bin' }}' >> "$GITHUB_ENV"
+
+      - name: "Create a virtual environment (Windows)"
+        if: "steps.restore-cache.outputs.cache-hit == false && runner.os == 'Windows'"
+        shell: "pwsh"
+        run: |
+          $REQUIREMENTS_PATH=New-TemporaryFile
+          Out-File -InputObject $env:TOX_REQUIREMENTS -FilePath $REQUIREMENTS_PATH
+
+          uv venv --no-project --no-managed-python .venv
+          Out-File -InputObject "*" -FilePath .venv/.gitignore
+          uv pip install --no-managed-python --directory=.venv --requirements=$REQUIREMENTS_PATH --link-mode=copy
+
+      - name: "Create a virtual environment (non-Windows)"
+        if: "steps.restore-cache.outputs.cache-hit == false && runner.os != 'Windows'"
+        shell: "bash"
+        run: |
+          REQUIREMENTS_PATH="$(mktemp)"
+          echo "${TOX_REQUIREMENTS}" > "${REQUIREMENTS_PATH}"
+
+          uv venv --no-project --no-managed-python .venv
+          echo "*" > ".venv/.gitignore"
+          uv pip install --no-managed-python --directory=.venv --requirements="${REQUIREMENTS_PATH}"
+
+      - name: "Setup Pythons (requested)"
+        if: "fromJSON(env.tox-config).python-versions-required != fromJSON(env.tox-config).python-versions-requested"
+        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+        with:
+          python-version: "${{ fromJSON(env.tox-config).python-versions-requested }}"
+          allow-prereleases: true
+
+      - name: "Create the tox environments"
+        env:
+          TOX_SKIP_ENV: "${{ fromJSON(env.tox-config).tox-skip-environments-regex }}"
+        run: |
+          ${{ env.venv-path }}/tox run --colored=yes --notest ${{ fromJSON(env.tox-config).tox-environments && format('-e "{0}"', join(fromJSON(env.tox-config).tox-environments, ',')) }}
+
+      - name: "Run the test suite"
+        env:
+          TOX_SKIP_ENV: "${{ fromJSON(env.tox-config).tox-skip-environments-regex }}"
+        run: |
+          ${{ env.venv-path }}/tox run --colored=yes --no-provision --skip-pkg-install ${{ fromJSON(env.tox-config).tox-environments && format('-e "{0}"', join(fromJSON(env.tox-config).tox-environments, ',')) }}

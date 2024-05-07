@@ -1,0 +1,11 @@
+name: "Test unrunnable templates"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  template-unrunnable:
+    name: "template-unrunnable"
+    uses: "kurtmckee/github-workflows/.github/workflows/create-pr.jinja.yaml@jinja-templates"
+    with:
+      config: '{}'

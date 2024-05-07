@@ -1,0 +1,26 @@
+name: "⚙️ Prep updates"
+
+on:
+  workflow_dispatch: null
+
+jobs:
+  prep-updates:
+    name: "${{ matrix.commit-title }}"
+
+    permissions:
+      contents: "write"
+      pull-requests: "write"
+
+    strategy:
+      matrix:
+        include:
+          - tox-label-create-changes: "update"
+            commit-title: "Update project"
+            pr-title: "Update project"
+            pr-body-input-format: "gfm"
+            pr-body: |
+              _Updates auto-generated with `tox run -m update`._
+
+    uses: "./.github/workflows/create-pr.yaml"
+    with:
+      config: "${{ toJSON(matrix) }}"
