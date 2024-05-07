@@ -1,0 +1,55 @@
+on:
+  push: null
+
+jobs:
+  test:
+    name: "${{
+        matrix.name
+        || format(
+           'Test ({0})',
+          (startsWith(matrix.runner, 'ubuntu') && 'Linux')
+          || (startsWith(matrix.runner, 'macos') && 'macOS')
+          || (startsWith(matrix.runner, 'windows') && 'Windows')
+        )
+      }}"
+    strategy:
+      matrix:
+        runner:
+          - "ubuntu-latest"
+          - "macos-latest"
+          - "windows-latest"
+
+        # Each operating system should test all Python interpreters simultaneously.
+        # This nested-list syntax accomplishes that goal
+        # without creating cross-products of every possible OS and interpreter.
+        #
+        # Note: The CPython interpreter versions should be in ascending order
+        # because the last-listed version will be the default CPython version.
+        #
+        cpythons:
+          - - "3.8"
+            - "3.9"
+            - "3.10"
+            - "3.11"
+            - "3.12"
+        cpython-beta:
+          - "3.13"
+        pypys:
+          - - "3.8"
+            - "3.9"
+            - "3.10"
+
+        include:
+          - name: "Lint"
+            runner: "ubuntu-latest"
+            cpythons:
+              - "3.12"
+            tox:
+              environments:
+                - "mypy"
+
+      fail-fast: false
+
+    uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.1"
+    with:
+      config: "${{ toJSON(matrix) }}"
