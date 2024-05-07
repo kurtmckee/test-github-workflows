@@ -1,0 +1,13 @@
+name: "Tag and release"
+
+on:
+  workflow_dispatch: null
+
+jobs:
+  tag:
+    name: "tag"
+
+    permissions:
+      contents: "write"
+
+    uses: "kurtmckee/github-workflows/.github/workflows/create-tag-and-release.yaml@jinja-templates"
