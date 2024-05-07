@@ -1,0 +1,10 @@
+[tool.scriv]
+version = "0.1"
+categories = [
+    "Python support",
+    "Added",
+    "Removed",
+    "Changed",
+    "Fixed",
+    "Development",
+]
