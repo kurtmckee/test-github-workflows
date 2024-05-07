@@ -1,0 +1,22 @@
+name: "Test"
+
+on:
+  push: null
+  workflow_dispatch: null
+
+jobs:
+  test:
+    name: "test"
+    strategy:
+      matrix:
+        runner:
+          - "ubuntu-latest"
+          - "windows-latest"
+          - "macos-latest"
+
+        cpythons:
+          - ["3.14", "3.13"]
+
+    uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@jinja-templates"
+    with:
+      config: "${{ toJSON(matrix) }}"
