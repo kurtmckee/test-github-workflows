@@ -1,0 +1,31 @@
+name: "✨ Prep release"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The new version"
+        type: "string"
+        required: true
+
+jobs:
+  prep-release:
+    name: "Prep release v${{ inputs.version }}"
+
+    permissions:
+      contents: "write"
+      pull-requests: "write"
+
+    strategy:
+      matrix:
+        include:
+          - tox-label-create-changes: "prep-release"
+            branch-name: "release/$VERSION"
+            commit-title: "Update project metadata"
+            pr-base: "main"
+            pr-title: "Release v$VERSION"
+
+    uses: "kurtmckee/github-workflows/.github/workflows/create-pr.yaml@fix-create-pr"
+    with:
+      config: "${{ toJSON(matrix) }}"
+      version: "${{ inputs.version }}"
