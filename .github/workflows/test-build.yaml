@@ -1,0 +1,9 @@
+name: "Build"
+
+on:
+  workflow_dispatch: null
+
+jobs:
+  build:
+    name: "build"
+    uses: "kurtmckee/github-workflows/.github/workflows/build-python-package.yaml@jinja-templates"
