@@ -16,3 +16,15 @@ Unreleased changes to the code are documented in
 in the ``changelog.d/`` directory on GitHub.
 
 ..  scriv-insert-here
+
+.. _changelog-0.1:
+
+0.1 — 2024-05-09
+================
+
+Initial release
+---------------
+
+*   Validate the incoming configuration using a JSON schema.
+*   Cache virtual environments and tox environments automatically.
+*   Support installation of CPython and PyPy interpreters.
