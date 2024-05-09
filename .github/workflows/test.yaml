@@ -50,6 +50,6 @@ jobs:
 
       fail-fast: false
 
-    uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.1"
+    uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.2"
     with:
       config: "${{ toJSON(matrix) }}"
