@@ -16,7 +16,7 @@ jobs:
   validate-config:
     name: "Validate config"
     outputs:
-      config: "${{ steps.config-exporter.outputs.config }}"
+      config: "${{ steps.config-transformer.outputs.config }}"
     runs-on: "ubuntu-latest"
     steps:
       - name: "Setup Python"
@@ -26,38 +26,12 @@ jobs:
 
       - name: "Export config"
         id: "config-exporter"
-        shell: "python"
-        # Loading the workflow input from an environment variable
-        # avoids injection attacks and allows for more robust validation.
+        shell: "bash"
+        # Loading the input from an environment variable avoids injection attacks.
         env:
           inputs_config: "${{ inputs.config }}"
         run: |
-          # START: tox-config-writer.py
-          import json
-          import os
-          import sys
-
-          try:
-              config_string = os.environ["inputs_config"]  # KeyError
-              config = json.loads(config_string)  # json.JSONDecodeError
-              if not isinstance(config, dict):
-                  raise TypeError
-          except KeyError:
-              print("The 'inputs_config' key wasn't found in the environment")
-          except json.JSONDecodeError:
-              print("The config input couldn't be decoded as valid JSON")
-          except TypeError:
-              print("The config isn't a JSON object")
-          else:
-              output = json.dumps(config, sort_keys=True, separators=(",", ":"))
-              with open("config.json", "w") as file:
-                  file.write(output)
-              with open(os.environ["GITHUB_OUTPUT"], "a") as file:
-                  file.write(f"config={output}")
-              sys.exit(0)
-
-          sys.exit(1)
-          # END: tox-config-writer.py
+          echo "$inputs_config" > config.json
 
       # If a previous workflow run successfully validated an identical config object,
       # a cache hit is sufficient to demonstrate that no further validation is required.
@@ -212,6 +186,36 @@ jobs:
           pip install --user check-jsonschema
           check-jsonschema --schemafile schema.json config.json
 
+      - name: "Transform config"
+        id: "config-transformer"
+        shell: "python"
+        run: |
+          # START: tox-config-transformer.py
+          import json
+          import os
+
+          with open("config.json") as file:
+              config = json.load(file)
+
+          # Transform the tox environments for convenience.
+          # "pre-environments" and "post-environments" will be injected into "environments",
+          # together with a full list of CPython and PyPy interpreter versions.
+          # Since these keys are mutually-exclusive with "environments",
+          # no config data are lost in this transformation.
+          if {"pre-environments", "post-environments"} & config.get("tox", {}).keys():
+              environments = config["tox"].pop("pre-environments", [])
+              environments.extend(f"py{version}" for version in config.get("cpythons", []))
+              if "cpython-beta" in config:
+                  environments.append(f"py{config['cpython-beta']}")
+              environments.extend(f"pypy{version}" for version in config.get("pypys", []))
+              environments.extend(config["tox"].pop("post-environments", []))
+              config["tox"]["environments"] = environments
+
+          output = json.dumps(config, sort_keys=True, separators=(",", ":"))
+          with open(os.environ["GITHUB_OUTPUT"], "a") as file:
+              file.write(f"config={output}")
+          # END: tox-config-transformer.py
+
   tox:
     needs:
       - "validate-config"
@@ -229,11 +233,12 @@ jobs:
         run: |
           # shellcheck disable=SC2086
           for pattern in $FILE_PATTERNS; do
-              if ! md5sum $pattern >> '.hash-files.md5'; then
+              if ! ${{ runner.os == 'macOS' && 'shasum -a 1' || 'sha1sum' }} $pattern >> '.hash-files.sha'; then
                   echo "The cache.hash-files pattern '$pattern' matched nothing"
                   exit 1
               fi
           done
+          cat .hash-files.sha
 
       - name: "Setup Pythons"
         uses: "actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d" # v5.1.0
@@ -275,7 +280,7 @@ jobs:
             .tox/
             .venv/
             ${{ fromJSON(inputs.config).cache.paths && join(fromJSON(inputs.config).cache.paths, '\n') }}
-          key: "${{ fromJSON(inputs.config).cache.name || 'tox' }}-os=${{ fromJSON(inputs.config).runner }}-hash=${{ hashFiles('.python-identifiers', '.workflow-config.json', 'tox.ini', fromJSON(inputs.config).cache.key.hash-files && '.hash-files.md5') }}"
+          key: "${{ fromJSON(inputs.config).cache.name || 'tox' }}-os=${{ fromJSON(inputs.config).runner }}-hash=${{ hashFiles('.python-identifiers', '.workflow-config.json', 'tox.ini', fromJSON(inputs.config).cache.key.hash-files && '.hash-files.sha') }}"
 
       - name: "Identify .venv path"
         shell: "bash"
@@ -289,16 +294,6 @@ jobs:
           ${{ env.venv-path }}/python -m pip install --upgrade pip setuptools wheel
           ${{ env.venv-path }}/pip install tox
 
-      - name: "Prepare the tox environment list to run (specific list)"
-        if: "fromJSON(inputs.config).tox.environments"
-        run: |
-          echo "tox_environments=${{ join(fromJSON(inputs.config).tox.environments, ',') }}" >> "$GITHUB_ENV"
-
-      - name: "Prepare the tox environment list to run (prefix/postfix)"
-        if: "fromJSON(inputs.config).tox.pre-environments || fromJSON(inputs.config).tox.post-environments"
-        run: |
-          echo "tox_environments=${{ join(fromJSON(inputs.config).tox.environments, ',') }}" >> "$GITHUB_ENV"
-
       - name: "Run the test suite"
         run: |
-          ${{ env.venv-path }}/tox run --colored yes ${{ env.tox_environments && format('-e "{0}"', env.tox_environments) }}
+          ${{ env.venv-path }}/tox run --colored yes ${{ fromJSON(needs.validate-config.outputs.config).tox.environments && format('-e "{0}"', join(fromJSON(needs.validate-config.outputs.config).tox.environments, ',')) }}
