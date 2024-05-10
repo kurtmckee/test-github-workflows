@@ -17,6 +17,18 @@ in the ``changelog.d/`` directory on GitHub.
 
 ..  scriv-insert-here
 
+.. _changelog-0.2:
+
+0.2 — 2024-05-10
+================
+
+Fixed
+-----
+
+*   Fix ``tox.pre-environments`` and ``tox.post-environments``, which were ignored.
+*   Fix ``cache.hash-files`` checksum calculations,
+    which relied on a command that's unavailable on macOS.
+
 .. _changelog-0.1:
 
 0.1 — 2024-05-09
