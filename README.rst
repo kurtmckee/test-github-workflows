@@ -220,8 +220,10 @@ and using the ``toJSON()`` function to serialize it as a workflow input:
 
     strategy:
       matrix:
-        runner: ["ubuntu-latest"]
-        cpythons: ["3.12"]
+        runner:
+          - "ubuntu-latest"
+        cpythons:
+          - ["3.12"]
 
     uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.1"
     with:
