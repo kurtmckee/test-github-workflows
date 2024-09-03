@@ -19,11 +19,6 @@ jobs:
       config: "${{ steps.config-transformer.outputs.config }}"
     runs-on: "ubuntu-latest"
     steps:
-      - name: "Setup Python"
-        uses: "actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3" # v5.2.0
-        with:
-          python-version: "3.12"
-
       - name: "Export config"
         id: "config-exporter"
         shell: "bash"
@@ -179,6 +174,12 @@ jobs:
           }
           # END: tox-schema.json
           EOF
+
+      - name: "Setup Python for validation"
+        if: "steps.restore-cache.outputs.cache-hit == false"
+        uses: "actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3" # v5.2.0
+        with:
+          python-version: "3.12"
 
       - name: "Validate the config against the schema"
         if: "steps.restore-cache.outputs.cache-hit == false"
