@@ -220,10 +220,12 @@ and using the ``toJSON()`` function to serialize it as a workflow input:
 
     strategy:
       matrix:
-        runner: ["ubuntu-latest"]
-        cpythons: ["3.12"]
+        runner:
+          - "ubuntu-latest"
+        cpythons:
+          - ["3.12"]
 
-    uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.1"
+    uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.2"
     with:
       config: "${{ toJSON(matrix) }}"
 
@@ -263,7 +265,7 @@ Test all Python versions on each operating system
                 - "3.9"
                 - "3.10"
 
-        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.1"
+        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.2"
         with:
           config: "${{ toJSON(matrix) }}"
 
@@ -293,7 +295,7 @@ Similar to above, but add lint tests
                     - "docs"
                     - "mypy"
 
-        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.1"
+        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.2"
         with:
           config: "${{ toJSON(matrix) }}"
 
@@ -323,6 +325,6 @@ Run individual configurations
                   - "3.8"
                   - "3.12"
 
-        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.1"
+        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.2"
         with:
           config: "${{ toJSON(matrix.config) }}"
