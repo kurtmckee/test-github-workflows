@@ -5,9 +5,10 @@
 
 import json
 import os
+import pathlib
 
-with open("config.json") as file:
-    config = json.load(file)
+config_file_path = pathlib.Path(os.environ["RUNNER_TEMP"]) / "tox-config.json"
+config = json.loads(config_file_path.read_text())
 
 # Transform the tox environments for convenience.
 # "pre-environments" and "post-environments" will be injected into "environments",

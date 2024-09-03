@@ -26,7 +26,7 @@ jobs:
         env:
           inputs_config: "${{ inputs.config }}"
         run: |
-          echo "$inputs_config" > config.json
+          echo "$inputs_config" > "${RUNNER_TEMP}/tox-config.json"
 
       # If a previous workflow run successfully validated an identical config object,
       # a cache hit is sufficient to demonstrate that no further validation is required.
@@ -35,8 +35,8 @@ jobs:
         uses: "actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
         with:
           lookup-only: true
-          path: "config.json"
-          key: "config-${{ hashFiles('config.json') }}"
+          path: "${{ format('{0}/{1}', runner.temp, 'tox-config.json') }}"
+          key: "config-${{ hashFiles(format('{0}/{1}', runner.temp, 'tox-config.json')) }}"
 
       - name: "Write schema"
         if: "steps.restore-cache.outputs.cache-hit == false"
@@ -185,7 +185,7 @@ jobs:
         if: "steps.restore-cache.outputs.cache-hit == false"
         run: |
           pip install --user check-jsonschema
-          check-jsonschema --schemafile schema.json config.json
+          check-jsonschema --schemafile schema.json "${RUNNER_TEMP}/tox-config.json"
 
       - name: "Transform config"
         id: "config-transformer"
@@ -194,9 +194,10 @@ jobs:
           # START: tox-config-transformer.py
           import json
           import os
+          import pathlib
 
-          with open("config.json") as file:
-              config = json.load(file)
+          config_file_path = pathlib.Path(os.environ["RUNNER_TEMP"]) / "tox-config.json"
+          config = json.loads(config_file_path.read_text())
 
           # Transform the tox environments for convenience.
           # "pre-environments" and "post-environments" will be injected into "environments",
