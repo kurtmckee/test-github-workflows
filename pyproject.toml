@@ -1,6 +1,20 @@
+# pytest
+# ------
+
+[tool.pytest.ini_options]
+addopts = "--color=yes"
+filterwarnings = [
+    "error",
+]
+
+
+# scriv
+# -----
+
 [tool.scriv]
 version = "0.2"
 categories = [
+    "Breaking changes",
     "Python support",
     "Added",
     "Removed",
