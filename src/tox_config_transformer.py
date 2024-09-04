@@ -8,13 +8,6 @@ import os
 import pathlib
 import typing
 
-runner_temp = pathlib.Path(os.environ["RUNNER_TEMP"])
-
-
-def load_raw_config() -> dict[str, typing.Any]:
-    raw_config_path = runner_temp / "tox-config.raw.json"
-    return json.loads(raw_config_path.read_text())
-
 
 def transform_config(config: dict[str, typing.Any]):
     # Transform the tox environments for convenience.
@@ -32,17 +25,20 @@ def transform_config(config: dict[str, typing.Any]):
         config["tox-environments"] = environments
 
 
-def write_config(config: dict[str, typing.Any]) -> None:
+def main() -> None:
+    # Load
+    runner_temp = pathlib.Path(os.environ["RUNNER_TEMP"])
+    raw_config_path = runner_temp / "tox-config.raw.json"
+    config = json.loads(raw_config_path.read_text())
+
+    # Transform in-place
+    transform_config(config)
+
+    # Write
     output = json.dumps(config, sort_keys=True, separators=(",", ":"))
     with open(os.environ["GITHUB_ENV"], "a") as file:
         file.write(f"tox-config={output}")
     (runner_temp / "tox-config.json").write_text(output)
-
-
-def main() -> None:
-    config = load_raw_config()
-    transform_config(config)
-    write_config(config)
 
 
 if __name__ == "__main__":
