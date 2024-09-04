@@ -24,19 +24,19 @@ jobs:
         env:
           inputs_config: "${{ inputs.config }}"
         run: |
-          echo "$inputs_config" > "${RUNNER_TEMP}/tox-config.raw.json"
+          echo "$inputs_config" > ".tox-config.raw.json"
 
       # If a previous workflow run successfully validated an identical config object,
       # a cache hit is sufficient to demonstrate that no further validation is required.
-      - name: "Look up config cache"
+      - name: "Check if raw tox config is already validated"
         id: "lookup-config-cache"
-        uses: "actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
+        uses: "actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
         with:
           lookup-only: true
-          path: "${{ format('{0}/tox-config.raw.json', runner.temp) }}"
-          key: "config-${{ hashFiles(format('{0}/tox-config.raw.json', runner.temp)) }}"
+          path: ".tox-config.raw.json"
+          key: "config-${{ hashFiles('.tox-config.raw.json') }}"
 
-      - name: "Write schema"
+      - name: "Write tox config schema"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
         shell: "bash"
         env:
@@ -53,54 +53,32 @@ jobs:
                   "type": "string",
                   "minLength": 1
                 },
-                "tox": {
-                  "type": "object",
-                  "oneOf": [
-                    {
-                      "additionalProperties": false,
-                      "required": [
-                        "environments"
-                      ],
-                      "properties": {
-                        "environments": {
-                          "$comment": "A list of tox environments to run.",
-                          "type": "array",
-                          "minItems": 1,
-                          "items": {
-                            "type": "string",
-                            "minLength": 1
-                          }
-                        }
-                      }
-                    },
-                    {
-                      "additionalProperties": false,
-                      "anyOf": [
-                        {"required": ["pre-environments"]},
-                        {"required": ["post-environments"]}
-                      ],
-                      "properties": {
-                        "pre-environments": {
-                          "$comment": "A list of tox environments to run before all installed Python interpreter versions.",
-                          "type": "array",
-                          "minItems": 1,
-                          "items": {
-                            "type": "string",
-                            "minLength": 1
-                          }
-                        },
-                        "post-environments": {
-                          "$comment": "A list of tox environments to run after all installed Python interpreter versions.",
-                          "type": "array",
-                          "minItems": 1,
-                          "items": {
-                            "type": "string",
-                            "minLength": 1
-                          }
-                        }
-                      }
-                    }
-                  ]
+                "tox-environments": {
+                  "$comment": "A list of tox environments to run.",
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "tox-pre-environments": {
+                  "$comment": "A list of tox environments to run before all installed Python interpreter versions.",
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "tox-post-environments": {
+                  "$comment": "A list of tox environments to run after all installed Python interpreter versions.",
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
                 },
                 "cpythons": {
                   "$comment": "A list of CPython interpreter versions. Typically, the *last version* listed will be the default Python interpreter when 'python' is invoked, and will be the version used when installing and executing tox.",
@@ -125,47 +103,54 @@ jobs:
                     "minLength": 1
                   }
                 },
-                "cache": {
-                  "type": "object",
-                  "minProperties": 1,
-                  "properties": {
-                    "key": {
-                      "type": "object",
-                      "minProperties": 1,
-                      "properties": {
-                        "prefix": {
-                          "$comment": "A prefix to use with the cached environment key.",
-                          "type": "string",
-                          "minLength": 1,
-                          "default": "tox"
-                        },
-                        "hash-files": {
-                          "$comment": "An additional path pattern that will be added to the list of paths to include when hashing files for cache-busting.",
-                          "type": "array",
-                          "minItems": 1,
-                          "items": {
-                            "type": "string",
-                            "minLength": 1
-                          }
-                        }
-                      }
-                    },
-                    "paths": {
-                      "$comment": "Additional paths to cache. Any paths specified here will be added to the default list: '.venv/' and '.tox/'.",
-                      "type": "array",
-                      "minItems": 1,
-                      "items": {
-                        "type": "string",
-                        "minLength": 1
-                      }
-                    }
+                "cache-key-prefix": {
+                  "$comment": "A prefix to use with the cached environment key.",
+                  "type": "string",
+                  "minLength": 1,
+                  "default": "tox"
+                },
+                "cache-key-hash-files": {
+                  "$comment": "An additional path pattern that will be added to the list of paths to include when hashing files for cache-busting.",
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "cache-paths": {
+                  "$comment": "Additional paths to cache. Any paths specified here will be added to the default list: '.venv/' and '.tox/'.",
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
                   }
                 }
               },
-              "anyOf": [
-                {"required": ["cpythons"], "$comment": "At least one Python interpreter must be present."},
-                {"required": ["cpython-beta"]},
-                {"required": ["pypys"]}
+              "allOf": [
+                {
+                  "$comment": "At least one Python interpreter must be present.",
+                  "anyOf": [
+                    {"required": ["cpythons"]},
+                    {"required": ["cpython-beta"]},
+                    {"required": ["pypys"]}
+                  ]
+                },
+                {
+                  "if": {"required": ["tox-environments"]},
+                  "then": {
+                    "allOf": [
+                      {
+                        "$comment": "tox-environments is mutually exclusive with tox-pre-environments.",
+                        "not": {"required": ["tox-pre-environments"]}
+                      },
+                      {
+                        "$comment": "tox-environments is mutually exclusive with tox-post-environments.",
+                        "not": {"required": ["tox-post-environments"]}}
+                    ]
+                  }
+                }
               ]
             }
             # END: tox-schema.json
@@ -174,65 +159,97 @@ jobs:
           # the START and END lines in the JSON schema above must be removed.
           echo "${tox_schema}" | grep -ve '^#' > "${RUNNER_TEMP}/tox-schema.json"
 
-      - name: "Setup Python for validation"
+      - name: "Setup Python for tox config validation"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
         uses: "actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3" # v5.2.0
         with:
           python-version: "3.12"
 
-      - name: "Validate the config against the schema"
+      - name: "Validate the raw tox config against the schema"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
         shell: "bash"
         run: |
           pip install --target="${RUNNER_TEMP}/check-jsonschema" check-jsonschema
-          PYTHONPATH="${RUNNER_TEMP}/check-jsonschema" "${RUNNER_TEMP}/check-jsonschema/bin/check-jsonschema" --schemafile "${RUNNER_TEMP}/tox-schema.json" "${RUNNER_TEMP}/tox-config.raw.json"
+          PYTHONPATH="${RUNNER_TEMP}/check-jsonschema" "${RUNNER_TEMP}/check-jsonschema/bin/check-jsonschema" --schemafile "${RUNNER_TEMP}/tox-schema.json" ".tox-config.raw.json"
 
-      - name: "Transform config"
+      - name: "Create an empty 'tox-config-is-validated' flag file"
+        shell: "bash"
+        run: |
+          touch ".tox-config-is-validated.flag"
+
+      - name: "Create a 'config-is-validated' cache key"
+        if: "steps.lookup-config-cache.outputs.cache-hit == false"
+        uses: "actions/cache/save@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
+        with:
+          path: ".tox-config-is-validated.flag"
+          key: "config-${{ hashFiles('.tox-config.raw.json') }}"
+
+      - name: "Transform tox config"
         id: "config-transformer"
         shell: "python"
         run: |
-          # START: tox-config-transformer.py
+          # START: tox_config_transformer.py
           import json
           import os
           import pathlib
+          import typing
 
-          runner_temp = pathlib.Path(os.environ["RUNNER_TEMP"])
-          raw_config_path = runner_temp / "tox-config.raw.json"
-          config = json.loads(raw_config_path.read_text())
 
-          # Transform the tox environments for convenience.
-          # "pre-environments" and "post-environments" will be injected into "environments",
-          # together with a full list of CPython and PyPy interpreter versions.
-          # Since these keys are mutually-exclusive with "environments",
-          # no config data are lost in this transformation.
-          if {"pre-environments", "post-environments"} & config.get("tox", {}).keys():
-              environments = config["tox"].pop("pre-environments", [])
-              environments.extend(f"py{version}" for version in config.get("cpythons", []))
-              if "cpython-beta" in config:
-                  environments.append(f"py{config['cpython-beta']}")
-              environments.extend(f"pypy{version}" for version in config.get("pypys", []))
-              environments.extend(config["tox"].pop("post-environments", []))
-              config["tox"]["environments"] = environments
+          def transform_config(config: dict[str, typing.Any]):
+              # Transform the tox environments for convenience.
+              # pre- and post-environments will be assembled into "tox-environments",
+              # together with a full list of CPython and PyPy interpreter versions.
+              # Since these keys are mutually-exclusive with "tox-environments",
+              # no config data are lost in this transformation.
+              if {"tox-pre-environments", "tox-post-environments"} & config.keys():
+                  environments = config.pop("tox-pre-environments", [])
+                  environments.extend(f"py{version}" for version in config.get("cpythons", []))
+                  if "cpython-beta" in config:
+                      environments.append(f"py{config['cpython-beta']}")
+                  environments.extend(f"pypy{version}" for version in config.get("pypys", []))
+                  environments.extend(config.pop("tox-post-environments", []))
+                  config["tox-environments"] = environments
 
-          output = json.dumps(config, sort_keys=True, separators=(",", ":"))
-          with open(os.environ["GITHUB_ENV"], "a") as file:
-              file.write(f"tox-config={output}")
-          (runner_temp / "tox-config.json").write_text(output)
-          # END: tox-config-transformer.py
+
+          def main() -> None:
+              # Load
+              raw_config_path = pathlib.Path(".tox-config.raw.json")
+              config = json.loads(raw_config_path.read_text())
+
+              # Transform in-place
+              transform_config(config)
+
+              # Write
+              output = json.dumps(config, sort_keys=True, separators=(",", ":"))
+              with open(os.environ["GITHUB_ENV"], "a") as file:
+                  file.write(f"tox-config={output}")
+              pathlib.Path(".tox-config.json").write_text(output)
+
+
+          if __name__ == "__main__":
+              main()
+          # END: tox_config_transformer.py
 
       - name: "Checkout the repository"
         uses: "actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332" # v4.1.7
 
+      - name: "Save the tox config to a file for cache-busting"
+        shell: "bash"
+        run: |
+          cat << EOF > .tox-config.json
+          ${{ env.tox-config }}
+          EOF
+
       - name: "Calculate additional checksums"
-        if: "fromJSON(env.tox-config).cache.hash-files"
+        if: "fromJSON(env.tox-config).cache-key-hash-files"
         shell: "bash"
         env:
-          FILE_PATTERNS: "${{ join(fromJSON(env.tox-config).cache.hash-files, ' ') }}"
+          FILE_PATTERNS: "${{ join(fromJSON(env.tox-config).cache-key-hash-files, ' ') }}"
         run: |
           # shellcheck disable=SC2086
           for pattern in $FILE_PATTERNS; do
               if ! ${{ runner.os == 'macOS' && 'shasum -a 1' || 'sha1sum' }} $pattern >> '.hash-files.sha'; then
-                  echo "The cache.hash-files pattern '$pattern' matched nothing"
+                  echo "The cache-key-hash-files pattern '$pattern' matched nothing"
                   exit 1
               fi
           done
@@ -263,13 +280,6 @@ jobs:
       - name: "Detect Pythons"
         uses: "kurtmckee/detect-pythons@38187a5464f266e93e5c1467699f7be2bf521d2e" # v1.1.0
 
-      - name: "Write the workflow config"
-        shell: "bash"
-        run: |
-          cat << 'EOF' > .tox-config.json
-          ${{ env.tox-config }}
-          EOF
-
       - name: "Restore cache"
         id: "restore-cache"
         uses: "actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
@@ -277,17 +287,17 @@ jobs:
           path: |
             .tox/
             .venv/
-            ${{ fromJSON(env.tox-config).cache.paths && join(fromJSON(env.tox-config).cache.paths, '\n') }}
+            ${{ fromJSON(env.tox-config).cache-paths && join(fromJSON(env.tox-config).cache-paths, '\n') }}
           key: "${{
             format(
               '{0}-os={1}-hash={2}',
-              fromJSON(env.tox-config).cache.name || 'tox',
+              fromJSON(env.tox-config).cache-key-prefix || 'tox',
               fromJSON(env.tox-config).runner,
               hashFiles(
                 '.python-identifiers',
-                format('{0}/tox-config.json', runner.temp),
+                '.tox-config.json',
                 'tox.ini',
-                fromJSON(env.tox-config).cache.key.hash-files && '.hash-files.sha' || ''
+                fromJSON(env.tox-config).cache-key-hash-files && '.hash-files.sha' || ''
               )
             )
           }}"
@@ -306,4 +316,4 @@ jobs:
 
       - name: "Run the test suite"
         run: |
-          ${{ env.venv-path }}/tox run --colored yes ${{ fromJSON(env.tox-config).tox.environments && format('-e "{0}"', join(fromJSON(env.tox-config).tox.environments, ',')) }}
+          ${{ env.venv-path }}/tox run --colored yes ${{ fromJSON(env.tox-config).tox-environments && format('-e "{0}"', join(fromJSON(env.tox-config).tox-environments, ',')) }}

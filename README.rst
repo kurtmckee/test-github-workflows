@@ -63,21 +63,17 @@ Config keys
           - "3.9"
           - "3.10"
 
-*   ``tox``:
-    Tox-related settings.
-
-*   ``tox.environments``:
+*   ``tox-environments``:
     An array of tox environments to run. Items must be strings.
-    Mutually-exclusive with ``tox.pre-environments`` and ``tox.post-environments``.
+    Mutually-exclusive with ``tox-pre-environments`` and ``tox-post-environments``.
 
     Example:
 
     ..  code-block:: yaml
 
-        tox:
-          environments:
-            - "docs"
-            - "mypy"
+        tox-environments:
+          - "docs"
+          - "mypy"
 
     Resulting tox command:
 
@@ -85,10 +81,10 @@ Config keys
 
         tox run -e "docs,mypy"
 
-*   ``tox.pre-environments``:
+*   ``tox-pre-environments``:
     An array of of tox environments to run
     before a generated list of all CPython and PyPy environments.
-    Mutually-exclusive with ``tox.environments``.
+    Mutually-exclusive with ``tox-environments``.
 
     Example:
 
@@ -98,9 +94,8 @@ Config keys
           - "3.11"
         pypys:
           - "3.10"
-        tox:
-          pre-environments:
-            - "flake8"
+        tox-pre-environments:
+          - "flake8"
 
     Resulting tox command:
 
@@ -108,10 +103,10 @@ Config keys
 
         tox run -e "flake8,py3.11,pypy3.10"
 
-*   ``tox.post-environments``:
+*   ``tox-post-environments``:
     An array of of tox environments to run
     after a generated list of all CPython and PyPy environments.
-    Mutually-exclusive with ``tox.environments``.
+    Mutually-exclusive with ``tox-environments``.
 
     Example:
 
@@ -121,9 +116,8 @@ Config keys
           - "3.11"
         pypys:
           - "3.10"
-        tox:
-          post-environments:
-            - "coverage"
+        tox-post-environments:
+          - "coverage"
 
     Resulting tox command:
 
@@ -131,23 +125,19 @@ Config keys
 
         tox run -e "py3.11,pypy3.10,coverage"
 
-*   ``cache``:
-    Cache-related settings.
-
-*   ``cache.paths``:
+*   ``cache-paths``:
     An array of additional paths to cache.
 
     By default, a virtual environment is created in ``.venv/`` with tox installed,
     and tox virtual environments are created when tox runs in ``.tox/``.
-    These two directories are always cached and can be augmented by ``paths``.
+    These two directories are always cached and can be augmented by ``cache-paths``.
 
     Example:
 
     ..  code-block:: yaml
 
-        cache:
-          paths:
-            - ".mypy_cache/"
+        cache-paths:
+          - ".mypy_cache/"
 
     Resulting ``actions/cache`` configuration:
 
@@ -160,19 +150,14 @@ Config keys
             .venv/
             .mypy_cache/
 
-*   ``cache.key``:
-    Cache key-related settings.
-
-*   ``cache.key.prefix``:
+*   ``cache-key-prefix``:
     The string prefix to use with the cache. Defaults to ``"tox"``.
 
     Example:
 
     ..  code-block:: yaml
 
-        cache:
-          key:
-            prefix: "docs"
+        cache-key-prefix: "docs"
 
     Resulting ``actions/cache`` configuration:
 
@@ -182,7 +167,7 @@ Config keys
         with:
           key: "docs-..."
 
-*   ``cache.key.hash-files``:
+*   ``cache-hash-files``:
     An array of paths (or glob patterns) to hash and include in the cache key
     for cache-busting.
 
@@ -193,19 +178,18 @@ Config keys
 
     ..  code-block:: yaml
 
-        cache:
-          key:
-            hash-files:
-              - "pyproject.toml"
-              - "requirements/*/*.txt"
+        cache-key-hash-files:
+          - "pyproject.toml"
+          - "requirements/*/*.txt"
 
-    Resulting ``actions/cache`` configuration:
+    A file named ``.hash-files.sha`` will be generated containing SHA-1 checksums.
+    The resulting ``actions/cache`` configuration will be:
 
     ..  code-block:: yaml
 
         uses: "actions/cache@???"
         with:
-          key: "...${{ hashFiles('.python-identifiers', '.workflow-config.json', 'tox.ini', '.hash-files.md5') }}"
+          key: "...${{ hashFiles('.python-identifiers', '.workflow-config.json', 'tox.ini', '.hash-files.sha') }}"
 
 
 Passing the config to the workflow
@@ -290,10 +274,12 @@ Similar to above, but add lint tests
               - runner: "ubuntu-latest"
                 cpythons:
                   - "3.12"
-                tox:
-                  environments:
-                    - "docs"
-                    - "mypy"
+                tox-environments:
+                  - "docs"
+                  - "mypy"
+                cache-key-prefix: "lint"
+                cache-paths:
+                  - ".mypy_cache/"
 
         uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.2"
         with:
