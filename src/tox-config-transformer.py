@@ -5,9 +5,11 @@
 
 import json
 import os
+import pathlib
 
-with open("config.json") as file:
-    config = json.load(file)
+runner_temp = pathlib.Path(os.environ["RUNNER_TEMP"])
+raw_config_path = runner_temp / "tox-config.raw.json"
+config = json.loads(raw_config_path.read_text())
 
 # Transform the tox environments for convenience.
 # "pre-environments" and "post-environments" will be injected into "environments",
@@ -24,5 +26,6 @@ if {"pre-environments", "post-environments"} & config.get("tox", {}).keys():
     config["tox"]["environments"] = environments
 
 output = json.dumps(config, sort_keys=True, separators=(",", ":"))
-with open(os.environ["GITHUB_OUTPUT"], "a") as file:
-    file.write(f"config={output}")
+with open(os.environ["GITHUB_ENV"], "a") as file:
+    file.write(f"tox-config={output}")
+(runner_temp / "tox-config.json").write_text(output)
