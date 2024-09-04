@@ -27,8 +27,7 @@ def transform_config(config: dict[str, typing.Any]):
 
 def main() -> None:
     # Load
-    runner_temp = pathlib.Path(os.environ["RUNNER_TEMP"])
-    raw_config_path = runner_temp / "tox-config.raw.json"
+    raw_config_path = pathlib.Path(".tox-config.raw.json")
     config = json.loads(raw_config_path.read_text())
 
     # Transform in-place
@@ -38,7 +37,7 @@ def main() -> None:
     output = json.dumps(config, sort_keys=True, separators=(",", ":"))
     with open(os.environ["GITHUB_ENV"], "a") as file:
         file.write(f"tox-config={output}")
-    (runner_temp / "tox-config.json").write_text(output)
+    pathlib.Path(".tox-config.json").write_text(output)
 
 
 if __name__ == "__main__":

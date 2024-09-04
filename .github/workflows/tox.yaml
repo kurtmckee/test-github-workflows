@@ -24,19 +24,19 @@ jobs:
         env:
           inputs_config: "${{ inputs.config }}"
         run: |
-          echo "$inputs_config" > "${RUNNER_TEMP}/tox-config.raw.json"
+          echo "$inputs_config" > ".tox-config.raw.json"
 
       # If a previous workflow run successfully validated an identical config object,
       # a cache hit is sufficient to demonstrate that no further validation is required.
-      - name: "Look up config cache"
+      - name: "Check if raw tox config is already validated"
         id: "lookup-config-cache"
-        uses: "actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
+        uses: "actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
         with:
           lookup-only: true
-          path: "${{ format('{0}/tox-config.raw.json', runner.temp) }}"
-          key: "config-${{ hashFiles(format('{0}/tox-config.raw.json', runner.temp)) }}"
+          path: ".tox-config.raw.json"
+          key: "config-${{ hashFiles('.tox-config.raw.json') }}"
 
-      - name: "Write schema"
+      - name: "Write tox config schema"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
         shell: "bash"
         env:
@@ -159,20 +159,32 @@ jobs:
           # the START and END lines in the JSON schema above must be removed.
           echo "${tox_schema}" | grep -ve '^#' > "${RUNNER_TEMP}/tox-schema.json"
 
-      - name: "Setup Python for validation"
+      - name: "Setup Python for tox config validation"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
         uses: "actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3" # v5.2.0
         with:
           python-version: "3.12"
 
-      - name: "Validate the config against the schema"
+      - name: "Validate the raw tox config against the schema"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
         shell: "bash"
         run: |
           pip install --target="${RUNNER_TEMP}/check-jsonschema" check-jsonschema
-          PYTHONPATH="${RUNNER_TEMP}/check-jsonschema" "${RUNNER_TEMP}/check-jsonschema/bin/check-jsonschema" --schemafile "${RUNNER_TEMP}/tox-schema.json" "${RUNNER_TEMP}/tox-config.raw.json"
+          PYTHONPATH="${RUNNER_TEMP}/check-jsonschema" "${RUNNER_TEMP}/check-jsonschema/bin/check-jsonschema" --schemafile "${RUNNER_TEMP}/tox-schema.json" ".tox-config.raw.json"
 
-      - name: "Transform config"
+      - name: "Create an empty 'tox-config-is-validated' flag file"
+        shell: "bash"
+        run: |
+          touch ".tox-config-is-validated.flag"
+
+      - name: "Create a 'config-is-validated' cache key"
+        if: "steps.lookup-config-cache.outputs.cache-hit == false"
+        uses: "actions/cache/save@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
+        with:
+          path: ".tox-config-is-validated.flag"
+          key: "config-${{ hashFiles('.tox-config.raw.json') }}"
+
+      - name: "Transform tox config"
         id: "config-transformer"
         shell: "python"
         run: |
@@ -201,8 +213,7 @@ jobs:
 
           def main() -> None:
               # Load
-              runner_temp = pathlib.Path(os.environ["RUNNER_TEMP"])
-              raw_config_path = runner_temp / "tox-config.raw.json"
+              raw_config_path = pathlib.Path(".tox-config.raw.json")
               config = json.loads(raw_config_path.read_text())
 
               # Transform in-place
@@ -212,7 +223,7 @@ jobs:
               output = json.dumps(config, sort_keys=True, separators=(",", ":"))
               with open(os.environ["GITHUB_ENV"], "a") as file:
                   file.write(f"tox-config={output}")
-              (runner_temp / "tox-config.json").write_text(output)
+              pathlib.Path(".tox-config.json").write_text(output)
 
 
           if __name__ == "__main__":
@@ -221,6 +232,13 @@ jobs:
 
       - name: "Checkout the repository"
         uses: "actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332" # v4.1.7
+
+      - name: "Save the tox config to a file for cache-busting"
+        shell: "bash"
+        run: |
+          cat << EOF > .tox-config.json
+          ${{ env.tox-config }}
+          EOF
 
       - name: "Calculate additional checksums"
         if: "fromJSON(env.tox-config).cache-key-hash-files"
@@ -262,13 +280,6 @@ jobs:
       - name: "Detect Pythons"
         uses: "kurtmckee/detect-pythons@38187a5464f266e93e5c1467699f7be2bf521d2e" # v1.1.0
 
-      - name: "Write the workflow config"
-        shell: "bash"
-        run: |
-          cat << 'EOF' > .tox-config.json
-          ${{ env.tox-config }}
-          EOF
-
       - name: "Restore cache"
         id: "restore-cache"
         uses: "actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
@@ -284,7 +295,7 @@ jobs:
               fromJSON(env.tox-config).runner,
               hashFiles(
                 '.python-identifiers',
-                format('{0}/tox-config.json', runner.temp),
+                '.tox-config.json',
                 'tox.ini',
                 fromJSON(env.tox-config).cache-key-hash-files && '.hash-files.sha' || ''
               )
