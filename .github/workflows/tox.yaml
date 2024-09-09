@@ -172,17 +172,12 @@ jobs:
           pip install --target="${RUNNER_TEMP}/check-jsonschema" check-jsonschema
           PYTHONPATH="${RUNNER_TEMP}/check-jsonschema" "${RUNNER_TEMP}/check-jsonschema/bin/check-jsonschema" --schemafile "${RUNNER_TEMP}/tox-schema.json" ".tox-config.raw.json"
 
-      - name: "Create an empty 'tox-config-is-validated' flag file"
-        shell: "bash"
-        run: |
-          touch ".tox-config-is-validated.flag"
-
       - name: "Create a 'config-is-validated' cache key"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
         uses: "actions/cache/save@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
         with:
-          path: ".tox-config-is-validated.flag"
-          key: "config-${{ hashFiles('.tox-config.raw.json') }}"
+          path: ".tox-config.raw.json"
+          key: "${{ steps.lookup-config-cache.outputs.cache-primary-key }}"
 
       - name: "Transform tox config"
         id: "config-transformer"
