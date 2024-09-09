@@ -1,6 +1,6 @@
 [project]
 name = "github-workflows"
-version = "0.3"
+version = "0.4"
 
 
 # pytest
