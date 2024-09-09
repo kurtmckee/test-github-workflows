@@ -17,6 +17,30 @@ in the ``changelog.d/`` directory on GitHub.
 
 ..  scriv-insert-here
 
+.. _changelog-0.3:
+
+0.3 — 2024-09-08
+================
+
+Breaking changes
+----------------
+
+-   Flatten the configuration options.
+
+    This aligns better with how GitHub action matrices work with ``include`` directives.
+
+Changed
+-------
+
+-   Merge the standalone 'Validate config' job into the 'Run tests' job.
+
+    This is likely to reduce billable CI time in paid repos.
+
+Development
+-----------
+
+-   Add a test suite.
+
 .. _changelog-0.2:
 
 0.2 — 2024-05-10
