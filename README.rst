@@ -167,7 +167,7 @@ Config keys
         with:
           key: "docs-..."
 
-*   ``cache-hash-files``:
+*   ``cache-key-hash-files``:
     An array of paths (or glob patterns) to hash and include in the cache key
     for cache-busting.
 
