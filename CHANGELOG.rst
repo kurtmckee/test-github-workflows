@@ -17,6 +17,18 @@ in the ``changelog.d/`` directory on GitHub.
 
 ..  scriv-insert-here
 
+.. _changelog-0.4:
+
+0.4 — 2024-09-09
+================
+
+Fixed
+-----
+
+-   Fix 'config-is-validated' caching.
+
+    ``actions/cache`` needs the ``path`` values to match between restore and save steps.
+
 .. _changelog-0.3:
 
 0.3 — 2024-09-08
