@@ -1,6 +1,25 @@
+[project]
+name = "github-workflows"
+version = "0.3"
+
+
+# pytest
+# ------
+
+[tool.pytest.ini_options]
+addopts = "--color=yes"
+filterwarnings = [
+    "error",
+]
+
+
+# scriv
+# -----
+
 [tool.scriv]
-version = "0.2"
+version = "literal: pyproject.toml: project.version"
 categories = [
+    "Breaking changes",
     "Python support",
     "Added",
     "Removed",
