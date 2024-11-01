@@ -30,7 +30,7 @@ jobs:
       # a cache hit is sufficient to demonstrate that no further validation is required.
       - name: "Check if raw tox config is already validated"
         id: "lookup-config-cache"
-        uses: "actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
+        uses: "actions/cache/restore@6849a6489940f00c2f30c0fb92c6274307ccb58a" # v4.1.2
         with:
           lookup-only: true
           path: ".tox-config.raw.json"
@@ -161,7 +161,7 @@ jobs:
 
       - name: "Setup Python for tox config validation"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
-        uses: "actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3" # v5.2.0
+        uses: "actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b" # v5.3.0
         with:
           python-version: "3.12"
 
@@ -174,7 +174,7 @@ jobs:
 
       - name: "Create a 'config-is-validated' cache key"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
-        uses: "actions/cache/save@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
+        uses: "actions/cache/save@6849a6489940f00c2f30c0fb92c6274307ccb58a" # v4.1.2
         with:
           path: ".tox-config.raw.json"
           key: "${{ steps.lookup-config-cache.outputs.cache-primary-key }}"
@@ -226,7 +226,7 @@ jobs:
           # END: tox_config_transformer.py
 
       - name: "Checkout the repository"
-        uses: "actions/checkout@d632683dd7b4114ad314bca15554477dd762a938" # v4.2.0
+        uses: "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683" # v4.2.2
 
       - name: "Save the tox config to a file for cache-busting"
         shell: "bash"
@@ -251,7 +251,7 @@ jobs:
           cat .hash-files.sha
 
       - name: "Setup Pythons"
-        uses: "actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3" # v5.2.0
+        uses: "actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b" # v5.3.0
         env:
           # PyPy on macOS may warn about old pip versions during installation.
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -277,7 +277,7 @@ jobs:
 
       - name: "Restore cache"
         id: "restore-cache"
-        uses: "actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
+        uses: "actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a" # v4.1.2
         with:
           path: |
             .tox/
