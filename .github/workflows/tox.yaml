@@ -307,7 +307,7 @@ jobs:
         run: |
           python -m venv .venv
           ${{ env.venv-path }}/python -m pip install --upgrade pip setuptools wheel
-          ${{ env.venv-path }}/pip install tox
+          ${{ env.venv-path }}/pip install tox tox-uv
 
       - name: "Run the test suite"
         run: |

@@ -21,6 +21,7 @@ The ``tox.yaml`` workflow in this repo has the following features:
 *   Multiple CPython/PyPy interpreter versions per runner
 *   Selectable tox environments
 *   Schema validation of the inputs passed to the workflow
+*   Fast tox environment creation using the ``tox-uv`` plugin
 *   Built-in caching of tox and virtual environments with strong cache-busting
 
 
