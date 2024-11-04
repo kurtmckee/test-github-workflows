@@ -70,6 +70,7 @@ Config keys
     Mutually-exclusive with:
 
     *   ``tox-environments-from-pythons``
+    *   ``tox-factors``
     *   ``tox-pre-environments``
     *   ``tox-post-environments``
 
@@ -114,6 +115,30 @@ Config keys
 
         tox run -e "py3.12,py3.13,py3.14,pypy3.10"
                     ^^^^^^ ^^^^^^ ^^^^^^ ^^^^^^^^
+
+*   ``tox-factors``:
+    An array of factors to add to the ends of generated tox environment names.
+
+    Configuring this key automatically enables ``tox-environments-from-pythons``.
+
+    Mutually-exclusive with ``tox-environments``.
+
+    Example:
+
+    ..  code-block:: yaml
+
+        cpythons:
+          - "3.12"
+          - "3.13"
+        tox-factors:
+          - "ci"
+
+    Resulting tox command:
+
+    ..  code-block::
+
+        tox run -e "py3.12-ci,py3.13-ci"
+                          ^^^       ^^^
 
 *   ``tox-pre-environments``:
     An array of tox environments to run

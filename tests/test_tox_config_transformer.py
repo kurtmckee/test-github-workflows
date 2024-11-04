@@ -24,6 +24,7 @@ def test_tox_pre_post_environments():
 
     tox_config_transformer.transform_config(config)
     assert "tox-environments-from-pythons" not in config
+    assert "tox-factors" not in config
     assert "tox-pre-environments" not in config
     assert "tox-post-environments" not in config
     assert config["tox-environments"] == [
@@ -48,6 +49,7 @@ def test_tox_environments():
 
     tox_config_transformer.transform_config(config)
     assert "tox-environments-from-pythons" not in config
+    assert "tox-factors" not in config
     assert "tox-pre-environments" not in config
     assert "tox-post-environments" not in config
     assert config["tox-environments"] == [
@@ -70,10 +72,38 @@ def test_tox_pythons_as_environments():
 
     tox_config_transformer.transform_config(config)
     assert "tox-environments-from-pythons" not in config
+    assert "tox-factors" not in config
     assert "tox-pre-environments" not in config
     assert "tox-post-environments" not in config
     assert config["tox-environments"] == [
         "py3.13",
         "py3.14",
         "pypy3.10",
+    ]
+
+
+def test_tox_factors():
+    """Verify factors are only appended to generated tox environment names."""
+
+    config = {
+        "runner": "ubuntu-latest",
+        "cpythons": ["3.13"],
+        "cpython-beta": "3.14",
+        "pypys": ["3.10"],
+        "tox-factors": ["a", "b"],
+        "tox-pre-environments": ["pre"],
+        "tox-post-environments": ["post"],
+    }
+
+    tox_config_transformer.transform_config(config)
+    assert "tox-environments-from-pythons" not in config
+    assert "tox-factors" not in config
+    assert "tox-pre-environments" not in config
+    assert "tox-post-environments" not in config
+    assert config["tox-environments"] == [
+        "pre",
+        "py3.13-a-b",
+        "py3.14-a-b",
+        "pypy3.10-a-b",
+        "post",
     ]

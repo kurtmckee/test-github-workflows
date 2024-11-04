@@ -71,6 +71,7 @@ def test_allow_tox_pre_post_environments(tox_schema, pop_key):
 
 mutex_keys = (
     "tox-environments-from-pythons",
+    "tox-factors",
     "tox-pre-environments",
     "tox-post-environments",
 )
@@ -86,6 +87,7 @@ def test_tox_environments_mutex(tox_schema, pop_keys):
         "cpythons": ["3.12"],
         "tox-environments": ["in"],
         "tox-environments-from-pythons": True,
+        "tox-factors": ["factor"],
         "tox-pre-environments": ["pre"],
         "tox-post-environments": ["post"],
     }
@@ -114,6 +116,7 @@ def test_full_config(tox_schema):
         "cpython-beta": "3.13",
         "pypys": ["3.10"],
         "tox-environments-from-pythons": True,
+        "tox-factors": ["ci"],
         "tox-pre-environments": ["spin-up"],
         "tox-post-environments": ["spin-down"],
         "cache-key-prefix": "lint",
