@@ -7,7 +7,7 @@ sys.path.append(str(src_path))
 import tox_config_transformer  # noqa: E402
 
 
-def test_tox_pre_post_environments(monkeypatch):
+def test_tox_pre_post_environments():
     """Verify tox pre- and post- environment keys are transformed."""
 
     config = {
@@ -23,6 +23,7 @@ def test_tox_pre_post_environments(monkeypatch):
     }
 
     tox_config_transformer.transform_config(config)
+    assert "tox-environments-from-pythons" not in config
     assert "tox-pre-environments" not in config
     assert "tox-post-environments" not in config
     assert config["tox-environments"] == [
@@ -34,7 +35,7 @@ def test_tox_pre_post_environments(monkeypatch):
     ]
 
 
-def test_tox_environments(monkeypatch):
+def test_tox_environments():
     """Verify explicit tox environments are not transformed."""
 
     config = {
@@ -46,10 +47,33 @@ def test_tox_environments(monkeypatch):
     }
 
     tox_config_transformer.transform_config(config)
+    assert "tox-environments-from-pythons" not in config
     assert "tox-pre-environments" not in config
     assert "tox-post-environments" not in config
     assert config["tox-environments"] == [
         "a",
         "c",
         "b",
+    ]
+
+
+def test_tox_pythons_as_environments():
+    """Verify Pythons are used to generate a list of tox environments."""
+
+    config = {
+        "runner": "ubuntu-latest",
+        "cpythons": ["3.13"],
+        "cpython-beta": "3.14",
+        "pypys": ["3.10"],
+        "tox-environments-from-pythons": True,
+    }
+
+    tox_config_transformer.transform_config(config)
+    assert "tox-environments-from-pythons" not in config
+    assert "tox-pre-environments" not in config
+    assert "tox-post-environments" not in config
+    assert config["tox-environments"] == [
+        "py3.13",
+        "py3.14",
+        "pypy3.10",
     ]

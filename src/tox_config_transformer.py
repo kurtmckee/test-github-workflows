@@ -15,7 +15,10 @@ def transform_config(config: dict[str, typing.Any]):
     # together with a full list of CPython and PyPy interpreter versions.
     # Since these keys are mutually-exclusive with "tox-environments",
     # no config data are lost in this transformation.
-    if {"tox-pre-environments", "tox-post-environments"} & config.keys():
+    if (
+        config.pop("tox-environments-from-pythons", False)
+        or {"tox-pre-environments", "tox-post-environments"} & config.keys()
+    ):
         environments = config.pop("tox-pre-environments", [])
         environments.extend(f"py{version}" for version in config.get("cpythons", []))
         if "cpython-beta" in config:

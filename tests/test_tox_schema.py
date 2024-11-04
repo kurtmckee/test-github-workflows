@@ -1,5 +1,7 @@
+import itertools
 import json
 import pathlib
+import re
 
 import jsonschema
 import pytest
@@ -67,20 +69,40 @@ def test_allow_tox_pre_post_environments(tox_schema, pop_key):
     tox_schema.validate(config)
 
 
-@pytest.mark.parametrize(
-    "pop_key", ("tox-pre-environments", "tox-post-environments", None)
+mutex_keys = (
+    "tox-environments-from-pythons",
+    "tox-pre-environments",
+    "tox-post-environments",
 )
-def test_tox_environments_mutex(tox_schema, pop_key):
+all_mutex_combinations = itertools.chain(
+    *[itertools.combinations(mutex_keys, r=r) for r in range(len(mutex_keys))]
+)
+
+
+@pytest.mark.parametrize("pop_keys", all_mutex_combinations)
+def test_tox_environments_mutex(tox_schema, pop_keys):
     config = {
         "runner": "ubuntu-latest",
         "cpythons": ["3.12"],
         "tox-environments": ["in"],
+        "tox-environments-from-pythons": True,
         "tox-pre-environments": ["pre"],
         "tox-post-environments": ["post"],
     }
-    if pop_key in config:
+    for pop_key in pop_keys:
         config.pop(pop_key)
     msg = "tox-environments is mutually exclusive"
+    with pytest.raises(jsonschema.ValidationError, match=msg):
+        tox_schema.validate(config)
+
+
+def test_tox_environments_from_pythons_false(tox_schema):
+    config = {
+        "runner": "ubuntu-latest",
+        "cpythons": ["3.12"],
+        "tox-environments-from-pythons": False,
+    }
+    msg = re.escape("False is not one of [True]")
     with pytest.raises(jsonschema.ValidationError, match=msg):
         tox_schema.validate(config)
 
@@ -91,6 +113,7 @@ def test_full_config(tox_schema):
         "cpythons": ["3.12"],
         "cpython-beta": "3.13",
         "pypys": ["3.10"],
+        "tox-environments-from-pythons": True,
         "tox-pre-environments": ["spin-up"],
         "tox-post-environments": ["spin-down"],
         "cache-key-prefix": "lint",

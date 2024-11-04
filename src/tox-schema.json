@@ -18,6 +18,11 @@
         "minLength": 1
       }
     },
+    "tox-environments-from-pythons": {
+      "$comment": "Generate a list of tox environments from the list of all configured Python interpreters.",
+      "type": "boolean",
+      "enum": [true]
+    },
     "tox-pre-environments": {
       "$comment": "A list of tox environments to run before all installed Python interpreter versions.",
       "type": "array",
@@ -98,12 +103,17 @@
       "then": {
         "allOf": [
           {
+            "$comment": "tox-environments is mutually exclusive with tox-environments-from-pythons.",
+            "not": {"required": ["tox-environments-from-pythons"]}
+          },
+          {
             "$comment": "tox-environments is mutually exclusive with tox-pre-environments.",
             "not": {"required": ["tox-pre-environments"]}
           },
           {
             "$comment": "tox-environments is mutually exclusive with tox-post-environments.",
-            "not": {"required": ["tox-post-environments"]}}
+            "not": {"required": ["tox-post-environments"]}
+          }
         ]
       }
     }

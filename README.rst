@@ -66,7 +66,12 @@ Config keys
 
 *   ``tox-environments``:
     An array of tox environments to run. Items must be strings.
-    Mutually-exclusive with ``tox-pre-environments`` and ``tox-post-environments``.
+
+    Mutually-exclusive with:
+
+    *   ``tox-environments-from-pythons``
+    *   ``tox-pre-environments``
+    *   ``tox-post-environments``
 
     Example:
 
@@ -81,10 +86,41 @@ Config keys
     ..  code-block::
 
         tox run -e "docs,mypy"
+                    ^^^^ ^^^^
+
+*   ``tox-environments-from-pythons``:
+    A boolean flag that controls whether the configured Python interpreters
+    will be converted to a list of specific tox environments to execute.
+
+    If configured, the only allowed value is ``true``.
+
+    Mutually-exclusive with ``tox-environments``.
+
+    Example:
+
+    ..  code-block:: yaml
+
+        cpythons:
+          - "3.12"
+          - "3.13"
+        cpython-beta: "3.14"
+        pypys:
+          - "3.10"
+        tox-environments-from-pythons: true
+
+    Resulting tox command:
+
+    ..  code-block::
+
+        tox run -e "py3.12,py3.13,py3.14,pypy3.10"
+                    ^^^^^^ ^^^^^^ ^^^^^^ ^^^^^^^^
 
 *   ``tox-pre-environments``:
-    An array of of tox environments to run
-    before a generated list of all CPython and PyPy environments.
+    An array of tox environments to run
+    before a generated list of all configured Python interpreters as tox environments.
+
+    Configuring this key automatically enables ``tox-environments-from-pythons``.
+
     Mutually-exclusive with ``tox-environments``.
 
     Example:
@@ -103,10 +139,14 @@ Config keys
     ..  code-block::
 
         tox run -e "flake8,py3.11,pypy3.10"
+                    ^^^^^^
 
 *   ``tox-post-environments``:
-    An array of of tox environments to run
-    after a generated list of all CPython and PyPy environments.
+    An array of tox environments to run
+    after a generated list of all configured Python interpreters as tox environments.
+
+    Configuring this key automatically enables ``tox-environments-from-pythons``.
+
     Mutually-exclusive with ``tox-environments``.
 
     Example:
@@ -125,6 +165,7 @@ Config keys
     ..  code-block::
 
         tox run -e "py3.11,pypy3.10,coverage"
+                                    ^^^^^^^^
 
 *   ``cache-paths``:
     An array of additional paths to cache.
