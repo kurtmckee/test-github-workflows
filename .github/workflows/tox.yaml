@@ -30,7 +30,7 @@ jobs:
       # a cache hit is sufficient to demonstrate that no further validation is required.
       - name: "Check if raw tox config is already validated"
         id: "lookup-config-cache"
-        uses: "actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
+        uses: "actions/cache/restore@6849a6489940f00c2f30c0fb92c6274307ccb58a" # v4.1.2
         with:
           lookup-only: true
           path: ".tox-config.raw.json"
@@ -55,6 +55,20 @@ jobs:
                 },
                 "tox-environments": {
                   "$comment": "A list of tox environments to run.",
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "tox-environments-from-pythons": {
+                  "$comment": "Generate a list of tox environments from the list of all configured Python interpreters.",
+                  "type": "boolean",
+                  "enum": [true]
+                },
+                "tox-factors": {
+                  "$comment": "A list of factors to append to the generated names of tox environments.",
                   "type": "array",
                   "minItems": 1,
                   "items": {
@@ -142,12 +156,21 @@ jobs:
                   "then": {
                     "allOf": [
                       {
+                        "$comment": "tox-environments is mutually exclusive with tox-environments-from-pythons.",
+                        "not": {"required": ["tox-environments-from-pythons"]}
+                      },
+                      {
+                        "$comment": "tox-environments is mutually exclusive with tox-factors.",
+                        "not": {"required": ["tox-factors"]}
+                      },
+                      {
                         "$comment": "tox-environments is mutually exclusive with tox-pre-environments.",
                         "not": {"required": ["tox-pre-environments"]}
                       },
                       {
                         "$comment": "tox-environments is mutually exclusive with tox-post-environments.",
-                        "not": {"required": ["tox-post-environments"]}}
+                        "not": {"required": ["tox-post-environments"]}
+                      }
                     ]
                   }
                 }
@@ -161,7 +184,7 @@ jobs:
 
       - name: "Setup Python for tox config validation"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
-        uses: "actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3" # v5.2.0
+        uses: "actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b" # v5.3.0
         with:
           python-version: "3.12"
 
@@ -174,7 +197,7 @@ jobs:
 
       - name: "Create a 'config-is-validated' cache key"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
-        uses: "actions/cache/save@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
+        uses: "actions/cache/save@6849a6489940f00c2f30c0fb92c6274307ccb58a" # v4.1.2
         with:
           path: ".tox-config.raw.json"
           key: "${{ steps.lookup-config-cache.outputs.cache-primary-key }}"
@@ -196,14 +219,39 @@ jobs:
               # together with a full list of CPython and PyPy interpreter versions.
               # Since these keys are mutually-exclusive with "tox-environments",
               # no config data are lost in this transformation.
-              if {"tox-pre-environments", "tox-post-environments"} & config.keys():
+              tox_factors = config.pop("tox-factors", [])
+              factors = f"-{'-'.join(tox_factors)}" if tox_factors else ""
+              cpythons = config.get("cpythons", [])
+              cpython_beta = config.get("cpython-beta")
+              pypys = config.get("pypys", [])
+
+              if (
+                  factors
+                  or config.pop("tox-environments-from-pythons", False)
+                  or {"tox-pre-environments", "tox-post-environments"} & config.keys()
+              ):
                   environments = config.pop("tox-pre-environments", [])
-                  environments.extend(f"py{version}" for version in config.get("cpythons", []))
-                  if "cpython-beta" in config:
-                      environments.append(f"py{config['cpython-beta']}")
-                  environments.extend(f"pypy{version}" for version in config.get("pypys", []))
+                  environments.extend(f"py{version}{factors}" for version in cpythons)
+                  if cpython_beta is not None:
+                      environments.append(f"py{cpython_beta}{factors}")
+                  environments.extend(f"pypy{version}{factors}" for version in pypys)
                   environments.extend(config.pop("tox-post-environments", []))
                   config["tox-environments"] = environments
+
+              python_versions_requested = [f"pypy{version}" for version in pypys]
+              if cpython_beta is not None:
+                  python_versions_requested.append(cpython_beta)
+              python_versions_requested.extend(cpythons)
+
+              # Because tox only offers "best effort" PyPy support,
+              # and because tox may not support CPython alphas or betas,
+              # a stable CPython version must be included during initial Python setup.
+              python_versions_required = python_versions_requested.copy()
+              if not cpythons:
+                  python_versions_required.append("3.12")
+
+              config["python-versions-requested"] = "\n".join(python_versions_requested)
+              config["python-versions-required"] = "\n".join(python_versions_required)
 
 
           def main() -> None:
@@ -226,7 +274,7 @@ jobs:
           # END: tox_config_transformer.py
 
       - name: "Checkout the repository"
-        uses: "actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332" # v4.1.7
+        uses: "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683" # v4.2.2
 
       - name: "Save the tox config to a file for cache-busting"
         shell: "bash"
@@ -250,26 +298,12 @@ jobs:
           done
           cat .hash-files.sha
 
-      - name: "Setup Pythons"
-        uses: "actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3" # v5.2.0
+      - name: "Setup Pythons (required)"
+        uses: "actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b" # v5.3.0
         env:
-          # PyPy on macOS may warn about old pip versions during installation.
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
         with:
-          # Python interpreter versions are ordered:
-          #
-          # * PyPy versions
-          # * CPython beta version
-          # * CPython versions
-          #
-          python-version: "${{
-              format(
-                '{0}{1}{2}',
-                fromJSON(env.tox-config).pypys && format('pypy{0}\n', join(fromJSON(env.tox-config).pypys, '\npypy')) || '',
-                fromJSON(env.tox-config).cpython-beta && format('{0}\n', fromJSON(env.tox-config).cpython-beta ) || '',
-                fromJSON(env.tox-config).cpythons && join(fromJSON(env.tox-config).cpythons, '\n') || ''
-              )
-            }}"
+          python-version: "${{ fromJSON(env.tox-config).python-versions-required }}"
           allow-prereleases: true
 
       - name: "Detect Pythons"
@@ -277,7 +311,7 @@ jobs:
 
       - name: "Restore cache"
         id: "restore-cache"
-        uses: "actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9" # v4.0.2
+        uses: "actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a" # v4.1.2
         with:
           path: |
             .tox/
@@ -307,7 +341,16 @@ jobs:
         run: |
           python -m venv .venv
           ${{ env.venv-path }}/python -m pip install --upgrade pip setuptools wheel
-          ${{ env.venv-path }}/pip install tox
+          ${{ env.venv-path }}/pip install tox tox-uv
+
+      - name: "Setup Pythons (requested)"
+        if: "fromJSON(env.tox-config).python-versions-required != fromJSON(env.tox-config).python-versions-requested"
+        uses: "actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b" # v5.3.0
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+        with:
+          python-version: "${{ fromJSON(env.tox-config).python-versions-requested }}"
+          allow-prereleases: true
 
       - name: "Run the test suite"
         run: |

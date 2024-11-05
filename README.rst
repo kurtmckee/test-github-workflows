@@ -21,6 +21,7 @@ The ``tox.yaml`` workflow in this repo has the following features:
 *   Multiple CPython/PyPy interpreter versions per runner
 *   Selectable tox environments
 *   Schema validation of the inputs passed to the workflow
+*   Fast tox environment creation using the ``tox-uv`` plugin
 *   Built-in caching of tox and virtual environments with strong cache-busting
 
 
@@ -65,7 +66,13 @@ Config keys
 
 *   ``tox-environments``:
     An array of tox environments to run. Items must be strings.
-    Mutually-exclusive with ``tox-pre-environments`` and ``tox-post-environments``.
+
+    Mutually-exclusive with:
+
+    *   ``tox-environments-from-pythons``
+    *   ``tox-factors``
+    *   ``tox-pre-environments``
+    *   ``tox-post-environments``
 
     Example:
 
@@ -80,10 +87,65 @@ Config keys
     ..  code-block::
 
         tox run -e "docs,mypy"
+                    ^^^^ ^^^^
+
+*   ``tox-environments-from-pythons``:
+    A boolean flag that controls whether the configured Python interpreters
+    will be converted to a list of specific tox environments to execute.
+
+    If configured, the only allowed value is ``true``.
+
+    Mutually-exclusive with ``tox-environments``.
+
+    Example:
+
+    ..  code-block:: yaml
+
+        cpythons:
+          - "3.12"
+          - "3.13"
+        cpython-beta: "3.14"
+        pypys:
+          - "3.10"
+        tox-environments-from-pythons: true
+
+    Resulting tox command:
+
+    ..  code-block::
+
+        tox run -e "py3.12,py3.13,py3.14,pypy3.10"
+                    ^^^^^^ ^^^^^^ ^^^^^^ ^^^^^^^^
+
+*   ``tox-factors``:
+    An array of factors to add to the ends of generated tox environment names.
+
+    Configuring this key automatically enables ``tox-environments-from-pythons``.
+
+    Mutually-exclusive with ``tox-environments``.
+
+    Example:
+
+    ..  code-block:: yaml
+
+        cpythons:
+          - "3.12"
+          - "3.13"
+        tox-factors:
+          - "ci"
+
+    Resulting tox command:
+
+    ..  code-block::
+
+        tox run -e "py3.12-ci,py3.13-ci"
+                          ^^^       ^^^
 
 *   ``tox-pre-environments``:
-    An array of of tox environments to run
-    before a generated list of all CPython and PyPy environments.
+    An array of tox environments to run
+    before a generated list of all configured Python interpreters as tox environments.
+
+    Configuring this key automatically enables ``tox-environments-from-pythons``.
+
     Mutually-exclusive with ``tox-environments``.
 
     Example:
@@ -102,10 +164,14 @@ Config keys
     ..  code-block::
 
         tox run -e "flake8,py3.11,pypy3.10"
+                    ^^^^^^
 
 *   ``tox-post-environments``:
-    An array of of tox environments to run
-    after a generated list of all CPython and PyPy environments.
+    An array of tox environments to run
+    after a generated list of all configured Python interpreters as tox environments.
+
+    Configuring this key automatically enables ``tox-environments-from-pythons``.
+
     Mutually-exclusive with ``tox-environments``.
 
     Example:
@@ -124,6 +190,7 @@ Config keys
     ..  code-block::
 
         tox run -e "py3.11,pypy3.10,coverage"
+                                    ^^^^^^^^
 
 *   ``cache-paths``:
     An array of additional paths to cache.
@@ -167,7 +234,7 @@ Config keys
         with:
           key: "docs-..."
 
-*   ``cache-hash-files``:
+*   ``cache-key-hash-files``:
     An array of paths (or glob patterns) to hash and include in the cache key
     for cache-busting.
 
@@ -209,7 +276,7 @@ and using the ``toJSON()`` function to serialize it as a workflow input:
         cpythons:
           - ["3.12"]
 
-    uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.2"
+    uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v1"
     with:
       config: "${{ toJSON(matrix) }}"
 
@@ -249,7 +316,7 @@ Test all Python versions on each operating system
                 - "3.9"
                 - "3.10"
 
-        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.2"
+        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v1"
         with:
           config: "${{ toJSON(matrix) }}"
 
@@ -281,7 +348,7 @@ Similar to above, but add lint tests
                 cache-paths:
                   - ".mypy_cache/"
 
-        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.2"
+        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v1"
         with:
           config: "${{ toJSON(matrix) }}"
 
@@ -295,7 +362,7 @@ Run individual configurations
       test:
         strategy:
           matrix:
-            config:
+            include:
               # Test all Python versions on Ubuntu.
               - runner: "ubuntu-latest"
                 cpythons:
@@ -311,6 +378,6 @@ Run individual configurations
                   - "3.8"
                   - "3.12"
 
-        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.2"
+        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v1"
         with:
-          config: "${{ toJSON(matrix.config) }}"
+          config: "${{ toJSON(matrix) }}"
