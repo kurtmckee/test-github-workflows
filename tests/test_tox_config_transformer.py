@@ -1,13 +1,15 @@
 import pathlib
 import sys
 
+import pytest
+
 src_path = pathlib.Path(__file__).parent.parent / "src"
 sys.path.append(str(src_path))
 
 import tox_config_transformer  # noqa: E402
 
 
-def test_tox_pre_post_environments(monkeypatch):
+def test_tox_pre_post_environments():
     """Verify tox pre- and post- environment keys are transformed."""
 
     config = {
@@ -23,6 +25,8 @@ def test_tox_pre_post_environments(monkeypatch):
     }
 
     tox_config_transformer.transform_config(config)
+    assert "tox-environments-from-pythons" not in config
+    assert "tox-factors" not in config
     assert "tox-pre-environments" not in config
     assert "tox-post-environments" not in config
     assert config["tox-environments"] == [
@@ -34,7 +38,7 @@ def test_tox_pre_post_environments(monkeypatch):
     ]
 
 
-def test_tox_environments(monkeypatch):
+def test_tox_environments():
     """Verify explicit tox environments are not transformed."""
 
     config = {
@@ -46,6 +50,8 @@ def test_tox_environments(monkeypatch):
     }
 
     tox_config_transformer.transform_config(config)
+    assert "tox-environments-from-pythons" not in config
+    assert "tox-factors" not in config
     assert "tox-pre-environments" not in config
     assert "tox-post-environments" not in config
     assert config["tox-environments"] == [
@@ -53,3 +59,86 @@ def test_tox_environments(monkeypatch):
         "c",
         "b",
     ]
+
+
+def test_tox_pythons_as_environments():
+    """Verify Pythons are used to generate a list of tox environments."""
+
+    config = {
+        "runner": "ubuntu-latest",
+        "cpythons": ["3.13"],
+        "cpython-beta": "3.14",
+        "pypys": ["3.10"],
+        "tox-environments-from-pythons": True,
+    }
+
+    tox_config_transformer.transform_config(config)
+    assert "tox-environments-from-pythons" not in config
+    assert "tox-factors" not in config
+    assert "tox-pre-environments" not in config
+    assert "tox-post-environments" not in config
+    assert config["tox-environments"] == [
+        "py3.13",
+        "py3.14",
+        "pypy3.10",
+    ]
+
+
+def test_tox_factors():
+    """Verify factors are only appended to generated tox environment names."""
+
+    config = {
+        "runner": "ubuntu-latest",
+        "cpythons": ["3.13"],
+        "cpython-beta": "3.14",
+        "pypys": ["3.10"],
+        "tox-factors": ["a", "b"],
+        "tox-pre-environments": ["pre"],
+        "tox-post-environments": ["post"],
+    }
+
+    tox_config_transformer.transform_config(config)
+    assert "tox-environments-from-pythons" not in config
+    assert "tox-factors" not in config
+    assert "tox-pre-environments" not in config
+    assert "tox-post-environments" not in config
+    assert config["tox-environments"] == [
+        "pre",
+        "py3.13-a-b",
+        "py3.14-a-b",
+        "pypy3.10-a-b",
+        "post",
+    ]
+
+
+@pytest.mark.parametrize(
+    "key, value, expected",
+    (
+        ("cpython-beta", "3.14", "3.14"),
+        ("pypys", ["3.10"], "pypy3.10"),
+    ),
+)
+def test_tox_stable_cpython_injection(key, value, expected):
+    """Verify that a stable CPython version is injected."""
+
+    config = {
+        "runner": "ubuntu-latest",
+        key: value,
+    }
+
+    tox_config_transformer.transform_config(config)
+    assert config["python-versions-requested"] == expected
+    assert config["python-versions-required"] == expected + "\n3.12"
+
+
+def test_tox_stable_cpython_injection_unnecessary():
+    """Verify that no stable CPython is injected when stable CPythons are available."""
+
+    config = {
+        "runner": "ubuntu-latest",
+        "cpythons": ["3.13"],
+    }
+
+    tox_config_transformer.transform_config(config)
+    assert config["python-versions-requested"] == "3.13"
+    assert config["python-versions-required"] == "3.13"
