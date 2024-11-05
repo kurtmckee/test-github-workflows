@@ -276,7 +276,7 @@ and using the ``toJSON()`` function to serialize it as a workflow input:
         cpythons:
           - ["3.12"]
 
-    uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.2"
+    uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v1"
     with:
       config: "${{ toJSON(matrix) }}"
 
@@ -316,7 +316,7 @@ Test all Python versions on each operating system
                 - "3.9"
                 - "3.10"
 
-        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.2"
+        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v1"
         with:
           config: "${{ toJSON(matrix) }}"
 
@@ -348,7 +348,7 @@ Similar to above, but add lint tests
                 cache-paths:
                   - ".mypy_cache/"
 
-        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.2"
+        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v1"
         with:
           config: "${{ toJSON(matrix) }}"
 
@@ -362,7 +362,7 @@ Run individual configurations
       test:
         strategy:
           matrix:
-            config:
+            include:
               # Test all Python versions on Ubuntu.
               - runner: "ubuntu-latest"
                 cpythons:
@@ -378,6 +378,6 @@ Run individual configurations
                   - "3.8"
                   - "3.12"
 
-        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v0.2"
+        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v1"
         with:
-          config: "${{ toJSON(matrix.config) }}"
+          config: "${{ toJSON(matrix) }}"

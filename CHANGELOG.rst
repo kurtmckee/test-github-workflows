@@ -17,6 +17,40 @@ in the ``changelog.d/`` directory on GitHub.
 
 ..  scriv-insert-here
 
+.. _changelog-1.0:
+
+1.0 — 2024-11-05
+================
+
+Added
+-----
+
+-   Add a ``tox-environments-from-pythons`` boolean key
+    which will cause a list of tox environments to be generated
+    from the list of all configured Python interpreters.
+
+-   Add a ``tox-factors`` config option that will auto-append the factors
+    to generated tox environment names.
+
+Changed
+-------
+
+-   Use the ``tox-uv`` plugin to speed up tox environment creation.
+
+-   Guarantee that a stable CPython interpreter is available for tox to use.
+
+    Because tox only offers "best effort" support for PyPy,
+    and might not support a given CPython alpha or beta,
+    CPython 3.12 will now be set up automatically for tox to use.
+
+    Just prior to running tox, ``actions/setup-python`` will be run again
+    to ensure that only the requested Python interpreters are on the PATH.
+
+Documentation
+-------------
+
+-   Fix a typo in the README.
+
 .. _changelog-0.4:
 
 0.4 — 2024-09-09
