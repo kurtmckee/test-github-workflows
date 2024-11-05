@@ -1,6 +1,8 @@
 import pathlib
 import sys
 
+import pytest
+
 src_path = pathlib.Path(__file__).parent.parent / "src"
 sys.path.append(str(src_path))
 
@@ -107,3 +109,36 @@ def test_tox_factors():
         "pypy3.10-a-b",
         "post",
     ]
+
+
+@pytest.mark.parametrize(
+    "key, value, expected",
+    (
+        ("cpython-beta", "3.14", "3.14"),
+        ("pypys", ["3.10"], "pypy3.10"),
+    ),
+)
+def test_tox_stable_cpython_injection(key, value, expected):
+    """Verify that a stable CPython version is injected."""
+
+    config = {
+        "runner": "ubuntu-latest",
+        key: value,
+    }
+
+    tox_config_transformer.transform_config(config)
+    assert config["python-versions-requested"] == expected
+    assert config["python-versions-required"] == expected + "\n3.12"
+
+
+def test_tox_stable_cpython_injection_unnecessary():
+    """Verify that no stable CPython is injected when stable CPythons are available."""
+
+    config = {
+        "runner": "ubuntu-latest",
+        "cpythons": ["3.13"],
+    }
+
+    tox_config_transformer.transform_config(config)
+    assert config["python-versions-requested"] == "3.13"
+    assert config["python-versions-required"] == "3.13"
