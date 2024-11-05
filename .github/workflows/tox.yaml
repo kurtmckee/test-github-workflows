@@ -266,7 +266,6 @@ jobs:
               output = json.dumps(config, sort_keys=True, separators=(",", ":"))
               with open(os.environ["GITHUB_ENV"], "a") as file:
                   file.write(f"tox-config={output}")
-              pathlib.Path(".tox-config.json").write_text(output)
 
 
           if __name__ == "__main__":
