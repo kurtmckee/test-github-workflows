@@ -30,7 +30,7 @@ jobs:
       # a cache hit is sufficient to demonstrate that no further validation is required.
       - name: "Check if raw tox config is already validated"
         id: "lookup-config-cache"
-        uses: "actions/cache/restore@6849a6489940f00c2f30c0fb92c6274307ccb58a" # v4.1.2
+        uses: "actions/cache/restore@1bd1e32a3bdc45362d1e726936510720a7c30a57" # v4.2.0
         with:
           lookup-only: true
           path: ".tox-config.raw.json"
@@ -197,7 +197,7 @@ jobs:
 
       - name: "Create a 'config-is-validated' cache key"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
-        uses: "actions/cache/save@6849a6489940f00c2f30c0fb92c6274307ccb58a" # v4.1.2
+        uses: "actions/cache/save@1bd1e32a3bdc45362d1e726936510720a7c30a57" # v4.2.0
         with:
           path: ".tox-config.raw.json"
           key: "${{ steps.lookup-config-cache.outputs.cache-primary-key }}"
@@ -310,7 +310,7 @@ jobs:
 
       - name: "Restore cache"
         id: "restore-cache"
-        uses: "actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a" # v4.1.2
+        uses: "actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57" # v4.2.0
         with:
           path: |
             .tox/
