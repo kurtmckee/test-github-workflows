@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "This file is a part of Kurt McKee's GitHub Workflows project.\nhttps://github.com/kurtmckee/github-workflows\nCopyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>.\nSPDX-License-Identifier: MIT",
+  "type": "object",
+  "required": [
+    "tox-label-create-changes"
+  ],
+  "properties": {
+    "runner": {
+      "description": "The runner for the workflow.",
+      "type": "string",
+      "minLength": 1,
+      "default": "ubuntu-latest"
+    },
+    "python-version": {
+      "description": "The Python version to use when running tox.",
+      "type": "string",
+      "default": "3.13"
+    },
+    "tox-label-create-changes": {
+      "description": "The tox label (passed using the `-m` argument) to run before creating the commit. After running tox, all file changes shown in `git status` will be included in the commit.",
+      "type": "string",
+      "minLength": 1,
+      "examples": [
+        "update",
+        "prep-release"
+      ]
+    },
+    "checkout-branch": {
+      "description": "The name of the branch to initially checkout.",
+      "type": "string",
+      "minLength": 1,
+      "default": "main"
+    },
+    "branch-name": {
+      "description": "The name of the branch to create. If a `version` input is passed to the workflow, it can be referenced as `$VERSION`.",
+      "type": "string",
+      "minLength": 1,
+      "default": "updates",
+      "examples": [
+        "release/$VERSION"
+      ]
+    },
+    "commit-title": {
+      "description": "The one-line commit message to use.",
+      "type": "string",
+      "minLength": 1,
+      "default": "Updates"
+    },
+    "pr-base": {
+      "description": "The name of the branch to merge to in the PR. This appears as the 'base' in the GitHub UI.",
+      "type": "string",
+      "minLength": 1,
+      "default": "main"
+    },
+    "pr-title": {
+      "description": "The title of the PR. If a `version` input is passed to the workflow, it can be referenced as `$VERSION`.",
+      "type": "string",
+      "minLength": 1,
+      "default": "Updates",
+      "examples": [
+        "Release v$VERSION"
+      ]
+    },
+    "pr-body": {
+      "description": "The body of the PR. If a `version` input is passed to the workflow, it can be referenced as `$VERSION`.",
+      "type": "string",
+      "minLength": 1,
+      "default": "",
+      "examples": [
+        "Scheduled updates."
+      ]
+    }
+  }
+}

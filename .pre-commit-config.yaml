@@ -37,7 +37,7 @@ repos:
       - id: "black"
 
   - repo: "https://github.com/pycqa/isort"
-    rev: "5.13.2"
+    rev: "6.0.0"
     hooks:
       - id: "isort"
 
@@ -49,7 +49,7 @@ repos:
           - "flake8-bugbear==24.12.12"
 
   - repo: "https://github.com/editorconfig-checker/editorconfig-checker"
-    rev: "v3.1.2"
+    rev: "v3.2.0"
     hooks:
       - id: "editorconfig-checker"
 
@@ -59,7 +59,7 @@ repos:
       - id: "check-dependabot"
       - id: "check-github-workflows"
       - id: "check-metaschema"
-        files: "src/tox-schema.json"
+        files: "src/.+-schema.json"
 
   - repo: "https://github.com/rhysd/actionlint"
     rev: "v1.7.7"
