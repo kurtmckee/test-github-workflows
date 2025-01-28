@@ -17,6 +17,16 @@ in the ``changelog.d/`` directory on GitHub.
 
 ..  scriv-insert-here
 
+.. _changelog-1.2:
+
+1.2 — 2025-01-28
+================
+
+Fixed
+-----
+
+-   ``create-pr``: Fix a typo that prevented the workflow from running correctly.
+
 .. _changelog-1.1:
 
 1.1 — 2025-01-27

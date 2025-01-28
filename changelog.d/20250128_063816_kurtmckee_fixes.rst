@@ -1,4 +1,0 @@
-Fixed
------
-
--   ``create-pr``: Fix a typo that prevented the workflow from running correctly.
