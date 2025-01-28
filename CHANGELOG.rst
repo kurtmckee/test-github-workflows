@@ -17,6 +17,23 @@ in the ``changelog.d/`` directory on GitHub.
 
 ..  scriv-insert-here
 
+.. _changelog-1.1:
+
+1.1 — 2025-01-27
+================
+
+Added
+-----
+
+-   Add a new reusable workflow: ``create-pr.yaml``.
+
+    It is capable of running a tox label, committing all changes, and opening a PR.
+
+Fixed
+-----
+
+-   ``tox``: Remove a duplicate write to ``.tox-config.json``.
+
 .. _changelog-1.0:
 
 1.0 — 2024-11-05
