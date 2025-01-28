@@ -1,6 +1,6 @@
 # This file is a part of Kurt McKee's GitHub Workflows project.
 # https://github.com/kurtmckee/github-workflows
-# Copyright 2024 Kurt McKee <contactme@kurtmckee.org>
+# Copyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>
 # SPDX-License-Identifier: MIT
 
 import json
@@ -62,7 +62,6 @@ def main() -> None:
     output = json.dumps(config, sort_keys=True, separators=(",", ":"))
     with open(os.environ["GITHUB_ENV"], "a") as file:
         file.write(f"tox-config={output}")
-    pathlib.Path(".tox-config.json").write_text(output)
 
 
 if __name__ == "__main__":

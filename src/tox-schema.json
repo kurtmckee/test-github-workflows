@@ -1,5 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "This file is a part of Kurt McKee's GitHub Workflows project.\nhttps://github.com/kurtmckee/github-workflows\nCopyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>.\nSPDX-License-Identifier: MIT",
   "type": "object",
   "required": [
     "runner"
@@ -10,7 +11,7 @@
       "minLength": 1
     },
     "tox-environments": {
-      "$comment": "A list of tox environments to run.",
+      "description": "A list of tox environments to run.",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -19,12 +20,12 @@
       }
     },
     "tox-environments-from-pythons": {
-      "$comment": "Generate a list of tox environments from the list of all configured Python interpreters.",
+      "description": "Generate a list of tox environments from the list of all configured Python interpreters.",
       "type": "boolean",
       "enum": [true]
     },
     "tox-factors": {
-      "$comment": "A list of factors to append to the generated names of tox environments.",
+      "description": "A list of factors to append to the generated names of tox environments.",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -33,7 +34,7 @@
       }
     },
     "tox-pre-environments": {
-      "$comment": "A list of tox environments to run before all installed Python interpreter versions.",
+      "description": "A list of tox environments to run before all installed Python interpreter versions.",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -42,7 +43,7 @@
       }
     },
     "tox-post-environments": {
-      "$comment": "A list of tox environments to run after all installed Python interpreter versions.",
+      "description": "A list of tox environments to run after all installed Python interpreter versions.",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -51,7 +52,7 @@
       }
     },
     "cpythons": {
-      "$comment": "A list of CPython interpreter versions. Typically, the *last version* listed will be the default Python interpreter when 'python' is invoked, and will be the version used when installing and executing tox.",
+      "description": "A list of CPython interpreter versions. Typically, the *last version* listed will be the default Python interpreter when 'python' is invoked, and will be the version used when installing and executing tox.",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -60,12 +61,12 @@
       }
     },
     "cpython-beta": {
-      "$comment": "A CPython version to install as a beta. Unless the 'cpythons' list is empty, this version will never be the default Python interpreter.",
+      "description": "A CPython version to install as a beta. Unless the 'cpythons' list is empty, this version will never be the default Python interpreter.",
       "type": "string",
       "minLength": 3
     },
     "pypys": {
-      "$comment": "A list of PyPy interpreter versions.",
+      "description": "A list of PyPy interpreter versions.",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -74,13 +75,13 @@
       }
     },
     "cache-key-prefix": {
-      "$comment": "A prefix to use with the cached environment key.",
+      "description": "A prefix to use with the cached environment key.",
       "type": "string",
       "minLength": 1,
       "default": "tox"
     },
     "cache-key-hash-files": {
-      "$comment": "An additional path pattern that will be added to the list of paths to include when hashing files for cache-busting.",
+      "description": "An additional path pattern that will be added to the list of paths to include when hashing files for cache-busting.",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -89,7 +90,7 @@
       }
     },
     "cache-paths": {
-      "$comment": "Additional paths to cache. Any paths specified here will be added to the default list: '.venv/' and '.tox/'.",
+      "description": "Additional paths to cache. Any paths specified here will be added to the default list: '.venv/' and '.tox/'.",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -100,7 +101,7 @@
   },
   "allOf": [
     {
-      "$comment": "At least one Python interpreter must be present.",
+      "description": "At least one Python interpreter must be specified.",
       "anyOf": [
         {"required": ["cpythons"]},
         {"required": ["cpython-beta"]},
@@ -108,23 +109,24 @@
       ]
     },
     {
+      "description": "If tox-environments is specified, many other keys must not be specified.",
       "if": {"required": ["tox-environments"]},
       "then": {
         "allOf": [
           {
-            "$comment": "tox-environments is mutually exclusive with tox-environments-from-pythons.",
+            "description": "tox-environments is mutually exclusive with tox-environments-from-pythons.",
             "not": {"required": ["tox-environments-from-pythons"]}
           },
           {
-            "$comment": "tox-environments is mutually exclusive with tox-factors.",
+            "description": "tox-environments is mutually exclusive with tox-factors.",
             "not": {"required": ["tox-factors"]}
           },
           {
-            "$comment": "tox-environments is mutually exclusive with tox-pre-environments.",
+            "description": "tox-environments is mutually exclusive with tox-pre-environments.",
             "not": {"required": ["tox-pre-environments"]}
           },
           {
-            "$comment": "tox-environments is mutually exclusive with tox-post-environments.",
+            "description": "tox-environments is mutually exclusive with tox-post-environments.",
             "not": {"required": ["tox-post-environments"]}
           }
         ]

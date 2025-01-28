@@ -1,12 +1,11 @@
-import pathlib
-import sys
+# This file is a part of Kurt McKee's GitHub Workflows project.
+# https://github.com/kurtmckee/github-workflows
+# Copyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>
+# SPDX-License-Identifier: MIT
 
 import pytest
 
-src_path = pathlib.Path(__file__).parent.parent / "src"
-sys.path.append(str(src_path))
-
-import tox_config_transformer  # noqa: E402
+import tox_config_transformer
 
 
 def test_tox_pre_post_environments():

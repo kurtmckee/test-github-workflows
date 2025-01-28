@@ -1,3 +1,8 @@
+# This file is a part of Kurt McKee's GitHub Workflows project.
+# https://github.com/kurtmckee/github-workflows
+# Copyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>
+# SPDX-License-Identifier: MIT
+
 import itertools
 import json
 import pathlib
@@ -15,7 +20,7 @@ def tox_schema():
 
 
 def test_require_a_python_interpreter(tox_schema):
-    msg = "At least one Python interpreter must be present."
+    msg = "At least one Python interpreter must be specified."
     with pytest.raises(jsonschema.ValidationError, match=msg):
         tox_schema.validate({"runner": "ubuntu-latest"})
 

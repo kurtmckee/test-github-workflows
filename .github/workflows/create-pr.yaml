@@ -1,0 +1,358 @@
+# This file is a part of Kurt McKee's GitHub Workflows project.
+# https://github.com/kurtmckee/github-workflows
+# Copyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>
+# SPDX-License-Identifier: MIT
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        type: "string"
+        required: true
+        description: |
+          The configuration object.
+      version:
+        type: "string"
+        required: false
+        description: |
+          The version to use when creating the release.
+
+          This must be a valid version specifier (see PEP 440),
+          but the workflow itself doesn't currently validate the version.
+
+          The version can be referenced in several configuration variables
+          by using the name `$VERSION`:
+
+          * `branch-name` (example: `release/$VERSION`)
+          * `commit-title` (example: `Update metadata for v$VERSION`)
+          * `pr-title` (example: `Release v$VERSION`)
+
+          The version will also be available as an environment variable when tox is run:
+
+          ```
+          poetry version "$VERSION"
+          ```
+
+          Remember to set the tox `pass_env` configuration value to pass `VERSION`.
+
+
+env:
+  # These values are used when a config value is not specified.
+  default-python-version: "3.12"
+  default-branch-from: "main"
+  default-branch-name: "updates"
+  default-commit-title: "Updates"
+  default-pr-base: "main"
+  default-pr-title: "Updates"
+  default-pr-body: ""
+
+jobs:
+  create-pr:
+    name: "create-pr"
+    runs-on: "${{ fromJSON(inputs.config).runner || 'ubuntu-latest' }}"
+    steps:
+      - name: "Export config"
+        id: "config-exporter"
+        shell: "bash"
+        # Loading the input from an environment variable avoids injection attacks.
+        env:
+          inputs_config: "${{ inputs.config }}"
+        run: |
+          echo "$inputs_config" > ".create-pr-config.raw.json"
+
+      # If a previous workflow run successfully validated an identical config object,
+      # a cache hit is sufficient to demonstrate that no further validation is required.
+      - name: "Check if raw config is already validated"
+        id: "lookup-config-cache"
+        uses: "actions/cache/restore@1bd1e32a3bdc45362d1e726936510720a7c30a57" # v4.2.0
+        with:
+          lookup-only: true
+          path: ".create-pr-config.raw.json"
+          key: "create-pr-pr-config-${{ hashFiles('.create-pr-config.raw.json') }}"
+
+      - name: "Write config schema"
+        if: "steps.lookup-config-cache.outputs.cache-hit == false"
+        shell: "bash"
+        env:
+          config_schema: |
+            # START: create-pr-schema.json
+            {
+              "$schema": "https://json-schema.org/draft-07/schema",
+              "description": "This file is a part of Kurt McKee's GitHub Workflows project.\nhttps://github.com/kurtmckee/github-workflows\nCopyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>.\nSPDX-License-Identifier: MIT",
+              "type": "object",
+              "required": [
+                "tox-label-create-changes"
+              ],
+              "properties": {
+                "runner": {
+                  "description": "The runner for the workflow.",
+                  "type": "string",
+                  "minLength": 1,
+                  "default": "ubuntu-latest"
+                },
+                "python-version": {
+                  "description": "The Python version to use when running tox.",
+                  "type": "string",
+                  "default": "3.13"
+                },
+                "tox-label-create-changes": {
+                  "description": "The tox label (passed using the `-m` argument) to run before creating the commit. After running tox, all file changes shown in `git status` will be included in the commit.",
+                  "type": "string",
+                  "minLength": 1,
+                  "examples": [
+                    "update",
+                    "prep-release"
+                  ]
+                },
+                "checkout-branch": {
+                  "description": "The name of the branch to initially checkout.",
+                  "type": "string",
+                  "minLength": 1,
+                  "default": "main"
+                },
+                "branch-name": {
+                  "description": "The name of the branch to create. If a `version` input is passed to the workflow, it can be referenced as `$VERSION`.",
+                  "type": "string",
+                  "minLength": 1,
+                  "default": "updates",
+                  "examples": [
+                    "release/$VERSION"
+                  ]
+                },
+                "commit-title": {
+                  "description": "The one-line commit message to use.",
+                  "type": "string",
+                  "minLength": 1,
+                  "default": "Updates"
+                },
+                "pr-base": {
+                  "description": "The name of the branch to merge to in the PR. This appears as the 'base' in the GitHub UI.",
+                  "type": "string",
+                  "minLength": 1,
+                  "default": "main"
+                },
+                "pr-title": {
+                  "description": "The title of the PR. If a `version` input is passed to the workflow, it can be referenced as `$VERSION`.",
+                  "type": "string",
+                  "minLength": 1,
+                  "default": "Updates",
+                  "examples": [
+                    "Release v$VERSION"
+                  ]
+                },
+                "pr-body": {
+                  "description": "The body of the PR. If a `version` input is passed to the workflow, it can be referenced as `$VERSION`.",
+                  "type": "string",
+                  "minLength": 1,
+                  "default": "",
+                  "examples": [
+                    "Scheduled updates."
+                  ]
+                }
+              }
+            }
+            # END: create-pr-schema.json
+        run: |
+          # Due to the architecture of the source code synchronization code,
+          # the START and END lines in the JSON schema above must be removed.
+          echo "${config_schema}" | grep -ve '^#' > "${RUNNER_TEMP}/config-schema.json"
+
+      - name: "Setup Python for config validation"
+        if: "steps.lookup-config-cache.outputs.cache-hit == false"
+        uses: "actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b" # v5.3.0
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+        with:
+          python-version: "${{ env.default-python-version }}"
+
+      - name: "Validate the raw config against the schema"
+        if: "steps.lookup-config-cache.outputs.cache-hit == false"
+        shell: "bash"
+        run: |
+          pip install --target="${RUNNER_TEMP}/check-jsonschema" check-jsonschema
+          PYTHONPATH="${RUNNER_TEMP}/check-jsonschema" "${RUNNER_TEMP}/check-jsonschema/bin/check-jsonschema" --schemafile "${RUNNER_TEMP}/config-schema.json" ".create-pr-config.raw.json"
+
+      - name: "Create a 'config-is-validated' cache key"
+        if: "steps.lookup-config-cache.outputs.cache-hit == false"
+        uses: "actions/cache/save@1bd1e32a3bdc45362d1e726936510720a7c30a57" # v4.2.0
+        with:
+          path: ".create-pr-config.raw.json"
+          key: "${{ steps.lookup-config-cache.outputs.cache-primary-key }}"
+
+      - name: "Checkout the repository"
+        uses: "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683" # v4.2.2
+        with:
+          ref: "${{ fromJSON(inputs.config).branch-from || env.default-branch-from }}"
+          fetch-depth: 0
+
+      - name: "Setup Python for executing tox"
+        uses: "actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b" # v5.3.0
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+        with:
+          python-version: "${{ fromJSON(inputs.config).python-version || env.default-python-version }}"
+          allow-prereleases: true
+
+      - name: "Identify .venv path"
+        shell: "bash"
+        run: |
+          echo 'venv-path=.venv/${{ runner.os == 'Windows' && 'Scripts' || 'bin' }}' >> "$GITHUB_ENV"
+
+      - name: "Create a virtual environment"
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+        shell: "bash"
+        run: |
+          python -m venv .venv
+          echo '*' > ".venv/.gitignore"
+          ${{ env.venv-path }}/python -m pip install uv
+          ${{ env.venv-path }}/uv pip install tox tox-uv
+
+      - name: "Generate changes"
+        env:
+          VERSION: "${{ inputs.version }}"
+        run: |
+          ${{ env.venv-path }}/tox run --colored yes -m "${{ fromJSON(inputs.config).tox-commit-prep-label }}"
+
+      - name: "Setup Python for commit generation"
+        uses: "actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b" # v5.3.0
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+        with:
+          python-version: "${{ env.default-python-version }}"
+          allow-prereleases: true
+
+      - name: "Generate commit request body"
+        shell: "python"
+        env:
+          VERSION: "${{ inputs.version }}"
+          BRANCH_NAME: "${{ fromJSON(inputs.config).branch-name || env.default-branch-name }}"
+          COMMIT_TITLE: "${{ fromJSON(inputs.config).commit-title || env.default-commit-title }}"
+          OUTPUT_FILE: "${{ runner.temp }}/graphql-input.json"
+        run: |
+          # START: create_commit_request_body.py
+          import base64
+          import json
+          import os
+          import pathlib
+          import re
+          import subprocess
+          import sys
+          import typing
+
+          RC_SUCCESS = 0
+          RC_FAILURE = 1
+
+          mandatory_environment_variables = {
+              "BRANCH_NAME",
+              "COMMIT_TITLE",
+              "GITHUB_REPOSITORY",
+              "GITHUB_SHA",
+              "OUTPUT_FILE",
+          }
+
+
+          def main() -> int:
+              # Ensure mandatory environment variables are present.
+              if missing_keys := (mandatory_environment_variables - os.environ.keys()):
+                  for missing_key in missing_keys:
+                      print(f"`{missing_key}` is a mandatory environment variable.")
+                  return RC_FAILURE
+
+              # Calculate file changes (and exit if there are none).
+              file_changes = calculate_file_changes()
+              if not file_changes:
+                  print("No file changes detected.")
+                  return RC_FAILURE
+
+              request_body = generate_request_body(file_changes)
+
+              output_file = os.environ["OUTPUT_FILE"]
+              if output_file == "-":
+                  print(json.dumps(request_body, indent=2))
+              else:
+                  with open(output_file, "w") as file:
+                      file.write(json.dumps(request_body))
+
+              return RC_SUCCESS
+
+
+          def generate_request_body(file_changes: dict[str, typing.Any]) -> dict[str, typing.Any]:
+              query = """
+                  mutation ($input:CreateCommitOnBranchInput!) {
+                      createCommitOnBranch(input: $input) {
+                          commit { oid }
+                      }
+                  }
+              """
+
+              return {
+                  "query": " ".join(query.split()),
+                  "variables": {
+                      "input": {
+                          "branch": {
+                              "branchName": inject_version(os.environ["BRANCH_NAME"]),
+                              "repositoryNameWithOwner": os.environ["GITHUB_REPOSITORY"],
+                          },
+                          "expectedHeadOid": os.environ["GITHUB_SHA"],
+                          "fileChanges": file_changes,
+                          "message": {
+                              "headline": inject_version(os.environ["COMMIT_TITLE"]),
+                          },
+                      },
+                  },
+              }
+
+
+          def inject_version(text: str) -> str:
+              version = os.getenv("VERSION", "VERSION_NOT_FOUND")
+              return re.sub(r"\$version", version, text, flags=re.I)
+
+
+          def calculate_file_changes() -> dict[str, list[dict[str, str]]]:
+              cmd = "git status --no-renames --porcelain"
+
+              additions: list[dict[str, str]] = []
+              deletions: list[dict[str, str]] = []
+
+              for line in subprocess.check_output(cmd.split()).decode().splitlines():
+                  path = pathlib.Path(line[3:])
+
+                  target = deletions
+                  info = {"path": path.as_posix()}
+                  if path.is_file():
+                      target = additions
+                      info["contents"] = base64.b64encode(path.read_bytes()).decode()
+                  target.append(info)
+
+              file_changes = {}
+              if additions:
+                  file_changes["additions"] = additions
+              if deletions:
+                  file_changes["deletions"] = deletions
+              return file_changes
+
+
+          if __name__ == "__main__":
+              sys.exit(main())
+          # END: create_commit_request_body.py
+
+      - name: "Push a new branch"
+        env:
+          VERSION: "${{ inputs.version }}"
+          GH_TOKEN: "${{ github.token }}"
+          COMMIT_TITLE: "${{ fromJSON(inputs.config).commit-title || env.default-commit-title }}"
+        run: |
+          git push origin HEAD:"${{ fromJSON(inputs.config).branch-name || env.default-branch-name }}"
+          gh api graphql --input "${{ runner.temp }}/graphql-input.json"
+
+      - name: "Create a PR"
+        env:
+          VERSION: "${{ inputs.version }}"
+          GH_TOKEN: "${{ github.token }}"
+        run: |
+          gh pr create \
+            --head "${{ fromJSON(inputs.config).branch-name || env.default-branch-name }}" \
+            --base "${{ fromJSON(inputs.config).branch-base || env.default-branch-base }}" \
+            --title "${{ fromJSON(inputs.config).pr-title || env.default-pr-title }}" \
+            --body "${{ fromJSON(inputs.config).pr-body || env.default-pr-body }}"
