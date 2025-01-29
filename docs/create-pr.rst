@@ -47,6 +47,13 @@ These must be set on the calling workflow:
       contents: "write"
       pull-requests: "write"
 
+In addition, GitHub will block the GitHub Actions bot from opening PRs
+unless a checkbox in the repository settings is ticked:
+
+..  code-block:: text
+
+    Settings > Actions > General > Allow GitHub Actions to create and approve pull requests
+
 
 ..  required-config-keys:
 
