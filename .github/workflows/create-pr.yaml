@@ -353,6 +353,6 @@ jobs:
         run: |
           gh pr create \
             --head "${{ fromJSON(inputs.config).branch-name || env.default-branch-name }}" \
-            --base "${{ fromJSON(inputs.config).branch-base || env.default-branch-base }}" \
+            --base "${{ fromJSON(inputs.config).pr-base || env.default-pr-base }}" \
             --title "${{ fromJSON(inputs.config).pr-title || env.default-pr-title }}" \
             --body "${{ fromJSON(inputs.config).pr-body || env.default-pr-body }}"
