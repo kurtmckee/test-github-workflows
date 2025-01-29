@@ -17,6 +17,16 @@ in the ``changelog.d/`` directory on GitHub.
 
 ..  scriv-insert-here
 
+.. _changelog-1.3:
+
+1.3 — 2025-01-29
+================
+
+Fixed
+-----
+
+-   ``create-pr``: Fix a bug that prevented the PR base branch from being set correctly.
+
 .. _changelog-1.2:
 
 1.2 — 2025-01-28
