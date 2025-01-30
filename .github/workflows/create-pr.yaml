@@ -352,6 +352,7 @@ jobs:
           GH_TOKEN: "${{ github.token }}"
         run: |
           gh pr create \
+            --draft \
             --head "${{ fromJSON(inputs.config).branch-name || env.default-branch-name }}" \
             --base "${{ fromJSON(inputs.config).pr-base || env.default-pr-base }}" \
             --title "${{ fromJSON(inputs.config).pr-title || env.default-pr-title }}" \
