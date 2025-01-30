@@ -17,6 +17,16 @@ in the ``changelog.d/`` directory on GitHub.
 
 ..  scriv-insert-here
 
+.. _changelog-1.4:
+
+1.4 — 2025-01-29
+================
+
+Changed
+-------
+
+-   ``create-pr``: Open draft PRs.
+
 .. _changelog-1.3:
 
 1.3 — 2025-01-29
