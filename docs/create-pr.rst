@@ -9,7 +9,7 @@
 ##################
 
 This reusable workflow runs a defined tox label to create changes to files,
-then commits all of the changes and creates a PR.
+then commits all of the changes and creates a draft PR.
 
 The reusable workflow takes two inputs:
 
