@@ -24,6 +24,15 @@ extend-select = ["B950"]
 extend-ignore = ["E203", "E501", "E701"]
 
 
+# mypy
+# ----
+
+[tool.mypy]
+files = "src/"
+strict = true
+sqlite_cache = true
+
+
 # pytest
 # ------
 

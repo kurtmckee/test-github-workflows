@@ -215,7 +215,7 @@ jobs:
           import typing
 
 
-          def transform_config(config: dict[str, typing.Any]):
+          def transform_config(config: dict[str, typing.Any]) -> None:
               # Transform the tox environments for convenience.
               # pre- and post-environments will be assembled into "tox-environments",
               # together with a full list of CPython and PyPy interpreter versions.
