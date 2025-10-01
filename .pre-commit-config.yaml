@@ -2,7 +2,7 @@ ci:
   autoupdate_schedule: "quarterly"
 
 default_language_version:
-  python: "python3.12"
+  python: "python3.13"
 
 repos:
   - repo: "meta"
@@ -27,9 +27,9 @@ repos:
     rev: "v3.20.0"
     hooks:
       - id: "pyupgrade"
-        name: "Enforce Python 3.12+ idioms"
+        name: "Enforce Python 3.13+ idioms"
         args:
-          - "--py312-plus"
+          - "--py313-plus"
 
   - repo: "https://github.com/psf/black-pre-commit-mirror"
     rev: "25.1.0"

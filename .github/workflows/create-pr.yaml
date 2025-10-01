@@ -38,7 +38,7 @@ on:
 
 env:
   # These values are used when a config value is not specified.
-  default-python-version: "3.12"
+  default-python-version: "3.13"
   default-branch-from: "main"
   default-branch-name: "updates"
   default-commit-title: "Updates"

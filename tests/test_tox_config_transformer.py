@@ -127,7 +127,7 @@ def test_tox_stable_cpython_injection(key, value, expected):
 
     tox_config_transformer.transform_config(config)
     assert config["python-versions-requested"] == expected
-    assert config["python-versions-required"] == expected + "\n3.12"
+    assert config["python-versions-required"] == expected + "\n3.13"
 
 
 def test_tox_stable_cpython_injection_unnecessary():
