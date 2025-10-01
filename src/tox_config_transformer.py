@@ -9,7 +9,7 @@ import pathlib
 import typing
 
 
-def transform_config(config: dict[str, typing.Any]):
+def transform_config(config: dict[str, typing.Any]) -> None:
     # Transform the tox environments for convenience.
     # pre- and post-environments will be assembled into "tox-environments",
     # together with a full list of CPython and PyPy interpreter versions.
@@ -44,7 +44,7 @@ def transform_config(config: dict[str, typing.Any]):
     # a stable CPython version must be included during initial Python setup.
     python_versions_required = python_versions_requested.copy()
     if not cpythons:
-        python_versions_required.append("3.12")
+        python_versions_required.append("3.13")
 
     config["python-versions-requested"] = "\n".join(python_versions_requested)
     config["python-versions-required"] = "\n".join(python_versions_required)
