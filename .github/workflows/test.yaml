@@ -1,0 +1,30 @@
+name: "🧪 Test"
+
+on:
+  pull_request:
+  push:
+    branches:
+      - "main"
+      - "releases"
+
+jobs:
+  test:
+    # Suppress GitHub's automatic name changes based on matrix values
+    # by referencing a matrix value.
+    name: "${{ 'Linux' || matrix.runner }}"
+    strategy:
+      matrix:
+        include:
+          - runner: "ubuntu-24.04"
+            cpythons:
+              - "3.13"
+            cache-key-hash-files:
+              - "requirements/*/*.txt"
+            cache-paths:
+              - ".mypy_cache/"
+            tox-skip-environments:
+              - "coverage-html"
+
+    uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@a8716fc28daeb38133a50ef8dce70df9c65988ad" # v1.5
+    with:
+      config: "${{ toJSON(matrix) }}"
