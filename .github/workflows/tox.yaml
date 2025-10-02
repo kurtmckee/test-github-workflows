@@ -12,6 +12,9 @@ on:
         required: true
         type: "string"
 
+env:
+  CHECK_JSONSCHEMA_VERSION: "0.34.0"
+
 jobs:
   tox:
     name: "tox"
@@ -25,6 +28,11 @@ jobs:
           inputs_config: "${{ inputs.config }}"
         run: |
           echo "$inputs_config" > ".tox-config.raw.json"
+
+      - name: "Setup Python for tox config validation/transformation"
+        uses: "actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c" # v6.0.0
+        with:
+          python-version: "3.13"
 
       # If a previous workflow run successfully validated an identical config object,
       # a cache hit is sufficient to demonstrate that no further validation is required.
@@ -56,6 +64,21 @@ jobs:
                 },
                 "tox-environments": {
                   "description": "A list of tox environments to run.",
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "tox-skip-environments-regex": {
+                  "description": "A regular expression matching tox environments to skip.",
+                  "type": "string",
+                  "format": "regex",
+                  "minLength": 1
+                },
+                "tox-skip-environments": {
+                  "description": "A list of tox environments to skip.",
                   "type": "array",
                   "minItems": 1,
                   "items": {
@@ -172,6 +195,14 @@ jobs:
                       {
                         "description": "tox-environments is mutually exclusive with tox-post-environments.",
                         "not": {"required": ["tox-post-environments"]}
+                      },
+                      {
+                        "description": "tox-environments is mutually exclusive with tox-skip-environments.",
+                        "not": {"required": ["tox-skip-environments"]}
+                      },
+                      {
+                        "description": "tox-environments is mutually exclusive with tox-skip-environments-regex.",
+                        "not": {"required": ["tox-skip-environments-regex"]}
                       }
                     ]
                   }
@@ -184,18 +215,16 @@ jobs:
           # the START and END lines in the JSON schema above must be removed.
           echo "${tox_schema}" | grep -ve '^#' > "${RUNNER_TEMP}/tox-schema.json"
 
-      - name: "Setup Python for tox config validation"
-        if: "steps.lookup-config-cache.outputs.cache-hit == false"
-        uses: "actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c" # v6.0.0
-        with:
-          python-version: "3.13"
-
       - name: "Validate the raw tox config against the schema"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
         shell: "bash"
         run: |
-          pip install --target="${RUNNER_TEMP}/check-jsonschema" check-jsonschema
-          PYTHONPATH="${RUNNER_TEMP}/check-jsonschema" "${RUNNER_TEMP}/check-jsonschema/bin/check-jsonschema" --schemafile "${RUNNER_TEMP}/tox-schema.json" ".tox-config.raw.json"
+          pip install --target="${RUNNER_TEMP}/check-jsonschema" "check-jsonschema==${CHECK_JSONSCHEMA_VERSION}"
+          export PYTHONPATH="${RUNNER_TEMP}/check-jsonschema"
+          "${RUNNER_TEMP}/check-jsonschema/bin/check-jsonschema" \
+              --schemafile "${RUNNER_TEMP}/tox-schema.json" \
+              --regex-variant python \
+              ".tox-config.raw.json"
 
       - name: "Create a 'config-is-validated' cache key"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
@@ -212,6 +241,7 @@ jobs:
           import json
           import os
           import pathlib
+          import re
           import typing
 
 
@@ -251,9 +281,17 @@ jobs:
               python_versions_required = python_versions_requested.copy()
               if not cpythons:
                   python_versions_required.append("3.13")
-
               config["python-versions-requested"] = "\n".join(python_versions_requested)
               config["python-versions-required"] = "\n".join(python_versions_required)
+
+              # Prepare the environments to skip.
+              skip_patterns: list[str] = []
+              for environment in config.pop("tox-skip-environments", []):
+                  skip_patterns.append(re.escape(environment))
+              skip_patterns.sort()
+              if pattern := config.pop("tox-skip-environments-regex", ""):
+                  skip_patterns.append(pattern)
+              config["tox-skip-environments-regex"] = "|".join(skip_patterns)
 
 
           def main() -> None:
@@ -354,5 +392,7 @@ jobs:
           allow-prereleases: true
 
       - name: "Run the test suite"
+        env:
+          TOX_SKIP_ENV: "${{ fromJSON(env.tox-config).tox-skip-environments-regex }}"
         run: |
           ${{ env.venv-path }}/tox run --colored yes ${{ fromJSON(env.tox-config).tox-environments && format('-e "{0}"', join(fromJSON(env.tox-config).tox-environments, ',')) }}
