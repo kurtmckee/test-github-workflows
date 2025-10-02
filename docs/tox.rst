@@ -74,6 +74,8 @@ Config keys
     *   ``tox-factors``
     *   ``tox-pre-environments``
     *   ``tox-post-environments``
+    *   ``tox-skip-environments``
+    *   ``tox-skip-environments-regex``
 
     Example:
 
@@ -192,6 +194,61 @@ Config keys
 
         tox run -e "py3.11,pypy3.10,coverage"
                                     ^^^^^^^^
+
+*   ``tox-skip-environments``:
+    An array of tox environment names to skip.
+
+    The names will be sorted, escaped, and combined into a regular expression.
+    Current tox behavior is to *match* -- not *search* -- names against the pattern,
+    so if this option is used, the names must exactly match tox environment names.
+
+    For true regular expression matching, see ``tox-skip-environments-regex`` below.
+
+    Mutually-exclusive with ``tox-environments``.
+
+    Example:
+
+    ..  code-block:: yaml
+
+        cpythons:
+          - "3.13"
+        tox-skip-environments:
+          - "coverage-html"
+          - "docs"
+
+    Resulting tox command:
+
+    ..  code-block::
+
+        export TOX_SKIP_ENVS='coverage-html|docs'
+                              ^^^^^^^^^^^^^ ^^^^
+        tox
+
+*   ``tox-skip-environments-regex``:
+    A regular expression of tox environment names to skip.
+
+    If used with ``tox-skip-environments``, the patterns will be combined.
+
+    Mutually-exclusive with ``tox-environments``.
+
+    Example:
+
+    ..  code-block:: yaml
+
+        cpythons:
+          - "3.13"
+        tox-skip-environments:
+          - "coverage-html"
+          - "docs"
+        tox-skip-environments-regex: "mypy-.*"
+
+    Resulting tox command:
+
+    ..  code-block::
+
+        export TOX_SKIP_ENVS='coverage-html|docs|mypy-.*'
+                              ^^^^^^^^^^^^^ ^^^^ ^^^^^^^
+        tox
 
 *   ``cache-paths``:
     An array of additional paths to cache.

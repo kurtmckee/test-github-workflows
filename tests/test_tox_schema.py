@@ -3,6 +3,7 @@
 # Copyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>
 # SPDX-License-Identifier: MIT
 
+import contextlib
 import itertools
 import json
 import pathlib
@@ -16,7 +17,10 @@ import pytest
 def tox_schema():
     tox_schema_path = pathlib.Path(__file__).parent.parent / "src/tox-schema.json"
     tox_schema = json.loads(tox_schema_path.read_text())
-    yield jsonschema.Draft7Validator(schema=tox_schema)
+    yield jsonschema.Draft7Validator(
+        schema=tox_schema,
+        format_checker=jsonschema.FormatChecker(),
+    )
 
 
 def test_require_a_python_interpreter(tox_schema):
@@ -79,6 +83,8 @@ mutex_keys = (
     "tox-factors",
     "tox-pre-environments",
     "tox-post-environments",
+    "tox-skip-environments",
+    "tox-skip-environments-regex",
 )
 all_mutex_combinations = itertools.chain(
     *[itertools.combinations(mutex_keys, r=r) for r in range(len(mutex_keys))]
@@ -95,6 +101,8 @@ def test_tox_environments_mutex(tox_schema, pop_keys):
         "tox-factors": ["factor"],
         "tox-pre-environments": ["pre"],
         "tox-post-environments": ["post"],
+        "tox-skip-environments": ["skip-literal"],
+        "tox-skip-environments-regex": "skip-pattern",
     }
     for pop_key in pop_keys:
         config.pop(pop_key)
@@ -124,8 +132,27 @@ def test_full_config(tox_schema):
         "tox-factors": ["ci"],
         "tox-pre-environments": ["spin-up"],
         "tox-post-environments": ["spin-down"],
+        "tox-skip-environments": ["skip-literal"],
+        "tox-skip-environments-regex": "skip-pattern",
         "cache-key-prefix": "lint",
         "cache-key-hash-files": ["mypy.ini", "requirements/*/requirements.txt"],
         "cache-key-paths": [".mypy_cache"],
     }
     tox_schema.validate(config)
+
+
+@pytest.mark.parametrize(
+    "pattern, context",
+    (
+        ("valid", contextlib.nullcontext()),
+        ("([{", pytest.raises(jsonschema.ValidationError, match="not a 'regex'")),
+    ),
+)
+def test_tox_skip_environments_regex(tox_schema, pattern, context):
+    config = {
+        "runner": "ubuntu-latest",
+        "cpythons": ["3.13"],
+        "tox-skip-environments-regex": pattern,
+    }
+    with context:
+        tox_schema.validate(config)

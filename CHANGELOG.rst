@@ -17,6 +17,32 @@ in the ``changelog.d/`` directory on GitHub.
 
 ..  scriv-insert-here
 
+.. _changelog-1.5:
+
+1.5 — 2025-10-02
+================
+
+Added
+-----
+
+-   Support skipping tox environments via two new config keys:
+    ``tox-skip-environments`` and ``tox-skip-environments-regex``.
+
+Changed
+-------
+
+-   Python 3.13 is now the default interpreter version
+    when only PyPy or beta CPython versions or configured for install.
+-   Python 3.13 is now used when validating the JSON configurations.
+
+Development
+-----------
+
+-   Test type annotations using mypy.
+-   Use chipshot to manage headers in the source code.
+-   Migrate the flake8 configuration to ``pyproject.toml`` using
+    the `flake8-toml-config <https://github.com/kurtmckee/flake8-toml-config>`_ plugin.
+
 .. _changelog-1.4:
 
 1.4 — 2025-01-29

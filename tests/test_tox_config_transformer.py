@@ -3,6 +3,8 @@
 # Copyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>
 # SPDX-License-Identifier: MIT
 
+import re
+
 import pytest
 
 import tox_config_transformer
@@ -127,7 +129,7 @@ def test_tox_stable_cpython_injection(key, value, expected):
 
     tox_config_transformer.transform_config(config)
     assert config["python-versions-requested"] == expected
-    assert config["python-versions-required"] == expected + "\n3.12"
+    assert config["python-versions-required"] == expected + "\n3.13"
 
 
 def test_tox_stable_cpython_injection_unnecessary():
@@ -141,3 +143,32 @@ def test_tox_stable_cpython_injection_unnecessary():
     tox_config_transformer.transform_config(config)
     assert config["python-versions-requested"] == "3.13"
     assert config["python-versions-required"] == "3.13"
+
+
+@pytest.mark.parametrize(
+    "strings, pattern, expected",
+    (
+        (["x.y.z", "abc"], None, r"abc|x\.y\.z"),
+        (None, "mypy-.*", "mypy-.*"),
+        (["x.y.z", "abc"], "mypy-.*", r"abc|x\.y\.z|mypy-.*"),
+    ),
+)
+def test_tox_skip_environments(strings, pattern, expected):
+    """Verify that skipped environments are sorted, escaped, and combined correctly.
+
+    Note that it is expected that the explicit regex pattern will always be at the end;
+    for visibility it is not sorted in with the list of literal environments.
+    """
+
+    config = {
+        "runner": "ubuntu-latest",
+        "cpythons": ["3.13"],
+    }
+    if strings is not None:
+        config["tox-skip-environments"] = strings
+    if pattern is not None:
+        config["tox-skip-environments-regex"] = pattern
+
+    tox_config_transformer.transform_config(config)
+    assert config["tox-skip-environments-regex"] == expected
+    assert re.compile(config["tox-skip-environments-regex"])
