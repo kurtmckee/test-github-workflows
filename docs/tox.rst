@@ -20,14 +20,22 @@ Table of contents
 =================
 
 *   `Config keys`_
+
+    *   `Runners`_
+    *   `Python interpreters`_
+    *   `Tox environments`_
+    *   `Caching`_
+
 *   `Passing the config to the workflow`_
 *   `Workflow examples`_
 
 
-..  config-keys:
-
 Config keys
 ===========
+
+
+Runners
+-------
 
 *   ``runner``:
     The runner to use.
@@ -35,6 +43,10 @@ Config keys
     ..  code-block:: yaml
 
         runner: "ubuntu-latest"
+
+
+Python interpreters
+-------------------
 
 *   ``cpythons``:
     An array of CPython interpreter versions to install. Items must be strings.
@@ -46,7 +58,7 @@ Config keys
           - "3.12"
 
 *   ``cpython-beta``:
-    The CPython interpreter beta to install. Must be a string.
+    A CPython interpreter beta to install. Must be a string.
 
     Example:
 
@@ -65,8 +77,14 @@ Config keys
           - "3.9"
           - "3.10"
 
+
+Tox environments
+----------------
+
 *   ``tox-environments``:
     An array of tox environments to run. Items must be strings.
+
+    If provided, only the given environment names will be run.
 
     Mutually-exclusive with:
 
@@ -220,8 +238,8 @@ Config keys
 
     ..  code-block::
 
-        export TOX_SKIP_ENVS='coverage-html|docs'
-                              ^^^^^^^^^^^^^ ^^^^
+        export TOX_SKIP_ENV='coverage-html|docs'
+                             ^^^^^^^^^^^^^ ^^^^
         tox
 
 *   ``tox-skip-environments-regex``:
@@ -246,9 +264,13 @@ Config keys
 
     ..  code-block::
 
-        export TOX_SKIP_ENVS='coverage-html|docs|mypy-.*'
-                              ^^^^^^^^^^^^^ ^^^^ ^^^^^^^
+        export TOX_SKIP_ENV='coverage-html|docs|mypy-.*'
+                             ^^^^^^^^^^^^^ ^^^^ ^^^^^^^
         tox
+
+
+Caching
+-------
 
 *   ``cache-paths``:
     An array of additional paths to cache.
@@ -317,8 +339,6 @@ Config keys
           key: "...${{ hashFiles('.python-identifiers', '.workflow-config.json', 'tox.ini', '.hash-files.sha') }}"
 
 
-..  passing-the-config-to-the-workflow:
-
 Passing the config to the workflow
 ==================================
 
@@ -340,8 +360,6 @@ and using the ``toJSON()`` function to serialize it as a workflow input:
     with:
       config: "${{ toJSON(matrix) }}"
 
-
-..  workflow-examples:
 
 Workflow examples
 =================

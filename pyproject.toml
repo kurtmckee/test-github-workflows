@@ -55,5 +55,6 @@ categories = [
     "Removed",
     "Changed",
     "Fixed",
+    "Documentation",
     "Development",
 ]
