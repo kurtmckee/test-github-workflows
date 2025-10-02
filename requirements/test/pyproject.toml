@@ -11,3 +11,8 @@ dependencies = [
     "pytest",
     "pytest-randomly",
 ]
+
+[dependency-groups]
+coverage = [
+    "coverage[toml]",
+]
