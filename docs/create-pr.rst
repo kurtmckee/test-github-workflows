@@ -29,8 +29,6 @@ Table of contents
 *   `Workflow examples`_
 
 
-..  permissions:
-
 Permissions
 ===========
 
@@ -55,8 +53,6 @@ unless a checkbox in the repository settings is ticked:
     Settings > Actions > General > Allow GitHub Actions to create and approve pull requests
 
 
-..  required-config-keys:
-
 Required config keys
 ====================
 
@@ -69,8 +65,6 @@ Required config keys
 
         tox-label-create-changes: "prep-release"
 
-
-..  optional-version-input:
 
 Optional version input
 ======================
@@ -95,8 +89,6 @@ Tox must be configured to pass ``VERSION`` into the test environment:
     commands =
         poetry version {env:VERSION}
 
-
-..  optional-config-keys:
 
 Optional config keys
 ====================
@@ -170,8 +162,6 @@ Optional config keys
         pr-body: "Exactly what it says on the tin."
 
 
-..  passing-the-config-to-the-workflow:
-
 Passing the config to the workflow
 ==================================
 
@@ -193,8 +183,6 @@ and using the ``toJSON()`` function to serialize it as a workflow input:
     with:
       config: "${{ toJSON(matrix) }}"
 
-
-..  workflow-examples:
 
 Workflow examples
 =================
