@@ -37,7 +37,7 @@ repos:
       - id: "black"
 
   - repo: "https://github.com/pycqa/isort"
-    rev: "6.0.1"
+    rev: "6.1.0"
     hooks:
       - id: "isort"
 
@@ -61,6 +61,11 @@ repos:
       - id: "check-github-workflows"
       - id: "check-metaschema"
         files: "src/.+-schema.json"
+
+  - repo: https://github.com/adhtruong/mirrors-typos
+    rev: v1.37.1
+    hooks:
+      - id: typos
 
   - repo: "https://github.com/rhysd/actionlint"
     rev: "v1.7.7"

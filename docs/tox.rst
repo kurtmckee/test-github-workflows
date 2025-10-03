@@ -485,7 +485,7 @@ Consider a matrix like the following:
 
 GitHub will combine the name of the workflow (``"🧪 Test"``),
 the name of the job (``"Linux"``), and the name of the tox workflow.
-However, it will also append matrix values to the job name in parantheses,
+However, it will also append matrix values to the job name in parentheses,
 resulting in this check name:
 
 ..  code-block::
@@ -493,7 +493,7 @@ resulting in this check name:
     🧪 Test / Linux (ubuntu-latest, 3.13) / tox
 
 
-As the number matrix values grow, so too will the length of the job name.
+As the number of matrix values grow, so too will the length of the job name.
 
 This behavior can be suppressed by referencing a ``matrix`` value in the job name.
 
@@ -542,7 +542,7 @@ This behavior can be suppressed by referencing a ``matrix`` value in the job nam
 #.  For a more complicated workflow,
     the name can be calculated based on matrix values.
 
-    ..  code-block::
+    ..  code-block:: yaml
 
         jobs:
           test:
