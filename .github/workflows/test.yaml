@@ -9,13 +9,12 @@ on:
 
 jobs:
   test:
-    # Suppress GitHub's automatic name changes based on matrix values
-    # by referencing a matrix value.
-    name: "${{ 'Linux' || matrix.runner }}"
+    name: "${{ matrix.name }}"
     strategy:
       matrix:
         include:
-          - runner: "ubuntu-24.04"
+          - name: "Linux"
+            runner: "ubuntu-24.04"
             cpythons:
               - "3.13"
             cache-key-hash-files:
