@@ -395,8 +395,14 @@ jobs:
           python-version: "${{ fromJSON(env.tox-config).python-versions-requested }}"
           allow-prereleases: true
 
+      - name: "Create the tox environments"
+        env:
+          TOX_SKIP_ENV: "${{ fromJSON(env.tox-config).tox-skip-environments-regex }}"
+        run: |
+          ${{ env.venv-path }}/tox run --colored=yes --notest
+
       - name: "Run the test suite"
         env:
           TOX_SKIP_ENV: "${{ fromJSON(env.tox-config).tox-skip-environments-regex }}"
         run: |
-          ${{ env.venv-path }}/tox run --colored yes ${{ fromJSON(env.tox-config).tox-environments && format('-e "{0}"', join(fromJSON(env.tox-config).tox-environments, ',')) }}
+          ${{ env.venv-path }}/tox run --colored=yes --no-provision --skip-pkg-install ${{ fromJSON(env.tox-config).tox-environments && format('-e "{0}"', join(fromJSON(env.tox-config).tox-environments, ',')) }}
