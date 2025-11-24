@@ -380,7 +380,7 @@ jobs:
         run: |
           python -m venv .venv
           ${{ env.venv-path }}/python -m pip install --upgrade pip setuptools wheel
-          ${{ env.venv-path }}/pip install tox tox-uv
+          ${{ env.venv-path }}/pip install tox tox-gh tox-uv
 
       - name: "Setup Pythons (requested)"
         if: "fromJSON(env.tox-config).python-versions-required != fromJSON(env.tox-config).python-versions-requested"
