@@ -24,6 +24,6 @@ jobs:
             tox-skip-environments:
               - "coverage-html"
 
-    uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@a8716fc28daeb38133a50ef8dce70df9c65988ad" # v1.5
+    uses: "./.github/workflows/tox.yaml"
     with:
       config: "${{ toJSON(matrix) }}"
