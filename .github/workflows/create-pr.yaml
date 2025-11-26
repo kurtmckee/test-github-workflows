@@ -37,6 +37,9 @@ on:
 
 
 env:
+  CHECK_JSONSCHEMA_VERSION: "0.35.0"
+  UV_VERSION: "0.9.11"
+
   # These values are used when a config value is not specified.
   default-python-version: "3.13"
   default-branch-from: "main"
@@ -59,6 +62,12 @@ jobs:
           inputs_config: "${{ inputs.config }}"
         run: |
           echo "$inputs_config" > ".create-pr-config.raw.json"
+
+      - name: "Install uv"
+        uses: "astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244" # v7.1.4
+        with:
+          version: "${{ env.UV_VERSION }}"
+          enable-cache: false
 
       # If a previous workflow run successfully validated an identical config object,
       # a cache hit is sufficient to demonstrate that no further validation is required.
@@ -169,8 +178,9 @@ jobs:
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
         shell: "bash"
         run: |
-          pip install --target="${RUNNER_TEMP}/check-jsonschema" check-jsonschema
-          PYTHONPATH="${RUNNER_TEMP}/check-jsonschema" "${RUNNER_TEMP}/check-jsonschema/bin/check-jsonschema" --schemafile "${RUNNER_TEMP}/config-schema.json" ".create-pr-config.raw.json"
+          uv tool run --from="check-jsonschema==${CHECK_JSONSCHEMA_VERSION}" check-jsonschema \
+            --schemafile "${RUNNER_TEMP}/config-schema.json" \
+            ".create-pr-config.raw.json"
 
       - name: "Create a 'config-is-validated' cache key"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
@@ -203,10 +213,9 @@ jobs:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
         shell: "bash"
         run: |
-          python -m venv .venv
+          uv venv .venv
           echo '*' > ".venv/.gitignore"
-          ${{ env.venv-path }}/python -m pip install uv
-          ${{ env.venv-path }}/uv pip install tox tox-uv
+          uv pip install --directory .venv tox tox-gh tox-uv
 
       - name: "Generate changes"
         env:
