@@ -65,6 +65,34 @@ Required config keys
 
         tox-label-create-changes: "prep-release"
 
+    When tox is run, two environment variables will be available:
+
+    *   ``PR_BODY_OUTPUT_PATH``, which a tox environment can write a PR body to
+    *   ``VERSION``, which will contain the optional ``version`` input value
+
+    These should be passed to the tox environments using the tox ``pass_env`` config.
+
+    Example:
+
+    ..  code-block:: ini
+
+        [testenv:prep-release]
+        description = Make the changes needed to create a new release PR
+        skip_install = true
+        deps =
+            poetry
+            scriv
+        passenv =
+            PR_BODY_OUTPUT_PATH
+            VERSION
+        commands =
+            # Fail if $VERSION is not set.
+            python -Ec 'import os; assert (v := os.getenv("VERSION")) is not None, v'
+            poetry version "{env:VERSION}"
+            scriv collect
+            scriv print --version "{env:VERSION}" --output "{env:PR_BODY_OUTPUT_PATH:{env:VERSION}.rst}"
+
+
 
 Optional version input
 ======================
@@ -208,7 +236,7 @@ Trivial example
         strategy:
           matrix:
             include:
-              - tox-commit-prep-label: "update"
+              - tox-label-create-changes: "update"
 
         uses: "kurtmckee/github-workflows/.github/workflows/create-pr.yaml@v1"
         with:
@@ -246,7 +274,7 @@ Prepare a new release
           matrix:
             include:
               - branch-name: "release/$VERSION"
-                commit-title: "Update project metadata"
+                commit-title: "Update project metadata for v$VERSION"
                 pr-title: "Release v$VERSION"
                 tox-label-create-changes: "prep-release"
 
