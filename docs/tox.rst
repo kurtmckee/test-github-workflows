@@ -71,7 +71,7 @@ Python interpreters
 
     ..  code-block:: yaml
 
-        cpython-beta: "3.14"
+        cpython-beta: "3.99"
 
 *   ``pypys``:
     An array of PyPy interpreter versions to install. Items must be strings.
