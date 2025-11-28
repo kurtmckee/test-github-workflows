@@ -1,0 +1,29 @@
+name: "🧪 Test"
+
+on:
+  pull_request:
+  push:
+    branches:
+      - "main"
+      - "releases"
+
+jobs:
+  test:
+    name: "${{ matrix.name }}"
+    strategy:
+      matrix:
+        include:
+          - name: "Linux"
+            runner: "ubuntu-24.04"
+            cpythons:
+              - "3.13"
+            cache-key-hash-files:
+              - "requirements/*/*.txt"
+            cache-paths:
+              - ".mypy_cache/"
+            tox-skip-environments:
+              - "coverage-html"
+
+    uses: "./.github/workflows/tox.yaml"
+    with:
+      config: "${{ toJSON(matrix) }}"

@@ -13,7 +13,10 @@ on:
         type: "string"
 
 env:
-  CHECK_JSONSCHEMA_VERSION: "0.34.0"
+  # These variables lock application versions for reproducibility.
+  CHECK_JSONSCHEMA_VERSION: "0.35.0"
+  PYTHON_VERSION: "3.13"
+  UV_VERSION: "0.9.11"
 
 jobs:
   tox:
@@ -30,9 +33,15 @@ jobs:
           echo "$inputs_config" > ".tox-config.raw.json"
 
       - name: "Setup Python for tox config validation/transformation"
-        uses: "actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c" # v6.0.0
+        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
         with:
-          python-version: "3.13"
+          python-version: "${{ env.PYTHON_VERSION }}"
+
+      - name: "Install uv"
+        uses: "astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244" # v7.1.4
+        with:
+          version: "${{ env.UV_VERSION }}"
+          enable-cache: false
 
       # If a previous workflow run successfully validated an identical config object,
       # a cache hit is sufficient to demonstrate that no further validation is required.
@@ -119,7 +128,7 @@ jobs:
                   }
                 },
                 "cpythons": {
-                  "description": "A list of CPython interpreter versions. Typically, the *last version* listed will be the default Python interpreter when 'python' is invoked, and will be the version used when installing and executing tox.",
+                  "description": "A list of CPython interpreter versions. The *last version* listed will be the default Python interpreter when 'python' is invoked, and will be the version used when installing and executing tox.",
                   "type": "array",
                   "minItems": 1,
                   "items": {
@@ -128,12 +137,12 @@ jobs:
                   }
                 },
                 "cpython-beta": {
-                  "description": "A CPython version to install as a beta. Unless the 'cpythons' list is empty, this version will never be the default Python interpreter.",
+                  "description": "A CPython version to install as a beta. A beta CPython interpreter will never be the default Python interpreter.",
                   "type": "string",
                   "minLength": 3
                 },
                 "pypys": {
-                  "description": "A list of PyPy interpreter versions.",
+                  "description": "A list of PyPy interpreter versions. PyPy interpreters will never be the default Python interpreter.",
                   "type": "array",
                   "minItems": 1,
                   "items": {
@@ -219,9 +228,7 @@ jobs:
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
         shell: "bash"
         run: |
-          pip install --target="${RUNNER_TEMP}/check-jsonschema" "check-jsonschema==${CHECK_JSONSCHEMA_VERSION}"
-          export PYTHONPATH="${RUNNER_TEMP}/check-jsonschema"
-          "${RUNNER_TEMP}/check-jsonschema/bin/check-jsonschema" \
+          uv tool run --from="check-jsonschema==${CHECK_JSONSCHEMA_VERSION}" check-jsonschema \
               --schemafile "${RUNNER_TEMP}/tox-schema.json" \
               --regex-variant python \
               ".tox-config.raw.json"
@@ -313,7 +320,7 @@ jobs:
           # END: tox_config_transformer.py
 
       - name: "Checkout the repository"
-        uses: "actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8" # v5.0.0
+        uses: "actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3" # v6.0.0
 
       - name: "Save the tox config to a file for cache-busting"
         shell: "bash"
@@ -338,7 +345,7 @@ jobs:
           cat .hash-files.sha
 
       - name: "Setup Pythons (required)"
-        uses: "actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c" # v6.0.0
+        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
         with:
@@ -378,21 +385,26 @@ jobs:
       - name: "Create a virtual environment"
         if: "steps.restore-cache.outputs.cache-hit == false"
         run: |
-          python -m venv .venv
-          ${{ env.venv-path }}/python -m pip install --upgrade pip setuptools wheel
-          ${{ env.venv-path }}/pip install tox tox-uv
+          uv venv .venv
+          uv pip install --directory .venv tox tox-gh tox-uv
 
       - name: "Setup Pythons (requested)"
         if: "fromJSON(env.tox-config).python-versions-required != fromJSON(env.tox-config).python-versions-requested"
-        uses: "actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c" # v6.0.0
+        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
         with:
           python-version: "${{ fromJSON(env.tox-config).python-versions-requested }}"
           allow-prereleases: true
 
+      - name: "Create the tox environments"
+        env:
+          TOX_SKIP_ENV: "${{ fromJSON(env.tox-config).tox-skip-environments-regex }}"
+        run: |
+          ${{ env.venv-path }}/tox run --colored=yes --notest
+
       - name: "Run the test suite"
         env:
           TOX_SKIP_ENV: "${{ fromJSON(env.tox-config).tox-skip-environments-regex }}"
         run: |
-          ${{ env.venv-path }}/tox run --colored yes ${{ fromJSON(env.tox-config).tox-environments && format('-e "{0}"', join(fromJSON(env.tox-config).tox-environments, ',')) }}
+          ${{ env.venv-path }}/tox run --colored=yes --no-provision --skip-pkg-install ${{ fromJSON(env.tox-config).tox-environments && format('-e "{0}"', join(fromJSON(env.tox-config).tox-environments, ',')) }}

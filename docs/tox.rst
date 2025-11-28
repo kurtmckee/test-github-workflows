@@ -20,14 +20,23 @@ Table of contents
 =================
 
 *   `Config keys`_
+
+    *   `Runners`_
+    *   `Python interpreters`_
+    *   `Tox environments`_
+    *   `Caching`_
+
 *   `Passing the config to the workflow`_
 *   `Workflow examples`_
+*   `Controlling the job name`_
 
-
-..  config-keys:
 
 Config keys
 ===========
+
+
+Runners
+-------
 
 *   ``runner``:
     The runner to use.
@@ -36,37 +45,59 @@ Config keys
 
         runner: "ubuntu-latest"
 
+
+Python interpreters
+-------------------
+
 *   ``cpythons``:
     An array of CPython interpreter versions to install. Items must be strings.
 
     ..  code-block:: yaml
 
         cpythons:
-          - "3.11"
           - "3.12"
+          - "3.13"
 
 *   ``cpython-beta``:
-    The CPython interpreter beta to install. Must be a string.
+    A CPython interpreter beta to install. Must be a string.
+
+    Tox will *never* be installed using a beta CPython interpreter.
+    The workflow will install a non-beta CPython interpreter if necessary
+    to avoid installing and executing tox on a beta CPython interpreter,
+    so it may be necessary to specify which tox environments to run
+    if the goal is to exclusively run the test suite with the beta interpreter.
 
     Example:
 
     ..  code-block:: yaml
 
-        cpython-beta: "3.13"
+        cpython-beta: "3.99"
 
 *   ``pypys``:
     An array of PyPy interpreter versions to install. Items must be strings.
+
+    Tox will *never* be installed using a PyPy interpreter.
+    The workflow will install a CPython interpreter if necessary
+    to avoid installing and executing tox on a PyPy interpreter,
+    so it may be necessary to specify which tox environments to run
+    if the goal is to exclusively run the test suite with the PyPy interpreters.
 
     Example:
 
     ..  code-block:: yaml
 
         pypys:
-          - "3.9"
           - "3.10"
+          - "3.11"
+
+
+Tox environments
+----------------
 
 *   ``tox-environments``:
     An array of tox environments to run. Items must be strings.
+
+    If provided, only the given environment names will be run.
 
     Mutually-exclusive with:
 
@@ -109,14 +140,14 @@ Config keys
           - "3.13"
         cpython-beta: "3.14"
         pypys:
-          - "3.10"
+          - "3.11"
         tox-environments-from-pythons: true
 
     Resulting tox command:
 
     ..  code-block::
 
-        tox run -e "py3.12,py3.13,py3.14,pypy3.10"
+        tox run -e "py3.12,py3.13,py3.14,pypy3.11"
                     ^^^^^^ ^^^^^^ ^^^^^^ ^^^^^^^^
 
 *   ``tox-factors``:
@@ -156,9 +187,9 @@ Config keys
     ..  code-block:: yaml
 
         cpythons:
-          - "3.11"
+          - "3.13"
         pypys:
-          - "3.10"
+          - "3.11"
         tox-pre-environments:
           - "flake8"
 
@@ -166,7 +197,7 @@ Config keys
 
     ..  code-block::
 
-        tox run -e "flake8,py3.11,pypy3.10"
+        tox run -e "flake8,py3.13,pypy3.11"
                     ^^^^^^
 
 *   ``tox-post-environments``:
@@ -182,9 +213,9 @@ Config keys
     ..  code-block:: yaml
 
         cpythons:
-          - "3.11"
+          - "3.12"
         pypys:
-          - "3.10"
+          - "3.11"
         tox-post-environments:
           - "coverage"
 
@@ -192,7 +223,7 @@ Config keys
 
     ..  code-block::
 
-        tox run -e "py3.11,pypy3.10,coverage"
+        tox run -e "py3.12,pypy3.11,coverage"
                                     ^^^^^^^^
 
 *   ``tox-skip-environments``:
@@ -220,8 +251,8 @@ Config keys
 
     ..  code-block::
 
-        export TOX_SKIP_ENVS='coverage-html|docs'
-                              ^^^^^^^^^^^^^ ^^^^
+        export TOX_SKIP_ENV='coverage-html|docs'
+                             ^^^^^^^^^^^^^ ^^^^
         tox
 
 *   ``tox-skip-environments-regex``:
@@ -246,9 +277,13 @@ Config keys
 
     ..  code-block::
 
-        export TOX_SKIP_ENVS='coverage-html|docs|mypy-.*'
-                              ^^^^^^^^^^^^^ ^^^^ ^^^^^^^
+        export TOX_SKIP_ENV='coverage-html|docs|mypy-.*'
+                             ^^^^^^^^^^^^^ ^^^^ ^^^^^^^
         tox
+
+
+Caching
+-------
 
 *   ``cache-paths``:
     An array of additional paths to cache.
@@ -317,8 +352,6 @@ Config keys
           key: "...${{ hashFiles('.python-identifiers', '.workflow-config.json', 'tox.ini', '.hash-files.sha') }}"
 
 
-..  passing-the-config-to-the-workflow:
-
 Passing the config to the workflow
 ==================================
 
@@ -334,14 +367,23 @@ and using the ``toJSON()`` function to serialize it as a workflow input:
         runner:
           - "ubuntu-latest"
         cpythons:
-          - ["3.12"]
+          - ["3.13"]
 
     uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v1"
     with:
       config: "${{ toJSON(matrix) }}"
 
+There is one ``runner`` value (the string ``"ubuntu-latest"``)
+and one ``cpythons`` value (the list ``["3.12"]``),
+so this matrix will result in only one JSON config:
 
-..  workflow-examples:
+..  code-block:: json
+
+    {
+      "runner": "ubuntu-latest",
+      "cpythons": ["3.13"]
+    }
+
 
 Workflow examples
 =================
@@ -360,59 +402,35 @@ Test all Python versions on each operating system
               - "macos-latest"
               - "windows-latest"
 
-            # Use a nested list syntax with the "cpythons" key.
-            cpythons:
-              - - "3.8"
-                - "3.9"
-                - "3.10"
-                - "3.11"
-                - "3.12"
-
-            # Test a beta CPython version.
-            cpython-beta:
-              - "3.13"
-
-            # Use a nested list syntax with the "pypys" key.
-            pypys:
-              - - "3.8"
-                - "3.9"
-                - "3.10"
-
-        uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v1"
-        with:
-          config: "${{ toJSON(matrix) }}"
-
-
-Similar to above, but add lint tests
-------------------------------------
-
-..  code-block:: yaml
-
-    jobs:
-      test:
-        strategy:
-          matrix:
-            runner:
-              - "ubuntu-latest"
-
-            cpythons:
-              - - "3.11"
-                - "3.12"
-
+            # The single value in this `include` section will be added to each runner.
             include:
-              - runner: "ubuntu-latest"
-                cpythons:
+              - cpythons:
+                  - "3.10"
+                  - "3.11"
                   - "3.12"
-                tox-environments:
-                  - "docs"
-                  - "mypy"
-                cache-key-prefix: "lint"
-                cache-paths:
-                  - ".mypy_cache/"
+                  - "3.13"
+                cpython-beta: "3.14"
+                pypys:
+                  - "3.10"
+                  - "3.11"
 
         uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v1"
         with:
           config: "${{ toJSON(matrix) }}"
+
+There are three ``runner`` values in the matrix
+and the single ``include`` object does not have a ``runner`` value,
+so this results in three JSON configurations, one for each given ``runner``.
+An example of the ``"ubuntu-latest"`` runner's JSON config is shown below:
+
+..  code-block:: json
+
+    {
+      "runner": "ubuntu-latest",
+      "cpythons": ["3.10", "3.11", "3.12", "3.13"],
+      "cpython-beta": "3.14",
+      "pypys": ["3.10", "3.11"]
+    }
 
 
 Run individual configurations
@@ -428,18 +446,125 @@ Run individual configurations
               # Test all Python versions on Ubuntu.
               - runner: "ubuntu-latest"
                 cpythons:
-                  - "3.8"
-                  - "3.9"
                   - "3.10"
                   - "3.11"
                   - "3.12"
+                  - "3.13"
 
               # Test only the highest and lowest Pythons on Windows.
               - runner: "windows-latest"
                 cpythons:
-                  - "3.8"
-                  - "3.12"
+                  - "3.10"
+                  - "3.13"
 
         uses: "kurtmckee/github-workflows/.github/workflows/tox.yaml@v1"
         with:
           config: "${{ toJSON(matrix) }}"
+
+
+Controlling the job name
+========================
+
+When using a ``matrix``, GitHub automatically appends matrix values
+to the job name to help differentiate the matrix configuration from each other.
+
+Consider a matrix like the following:
+
+..  code-block:: yaml
+
+    name: "🧪 Test"
+    jobs:
+      test:
+        name: "Linux"
+        strategy:
+          matrix:
+            include:
+              - runner: "ubuntu-latest"
+                cpythons: ["3.13"]
+
+
+GitHub will combine the name of the workflow (``"🧪 Test"``),
+the name of the job (``"Linux"``), and the name of the tox workflow.
+However, it will also append matrix values to the job name in parentheses,
+resulting in this check name:
+
+..  code-block::
+
+    🧪 Test / Linux (ubuntu-latest, 3.13) / tox
+
+
+As the number of matrix values grow, so too will the length of the job name.
+
+This behavior can be suppressed by referencing a ``matrix`` value in the job name.
+
+#.  The name can be hard-coded in the job name,
+    and a bogus matrix value can be referenced.
+
+    ..  code-block:: yaml
+
+        jobs:
+          test:
+            name: "${{ 'Linux' || matrix.bogus }}"
+            strategy:
+              matrix:
+                include:
+                  - name: "Linux"
+                    runner: "ubuntu-latest"
+                    cpythons: ["3.13"]
+
+    This results in the following check name:
+
+    ..  code-block::
+
+        🧪 Test / Linux / tox
+
+
+#.  The name can be hard-coded into the matrix and referenced.
+
+    ..  code-block:: yaml
+
+        jobs:
+          test:
+            name: "${{ matrix.name }}"
+            strategy:
+              matrix:
+                include:
+                  - name: "Linux"
+                    runner: "ubuntu-latest"
+                    cpythons: ["3.13"]
+
+    This results in the following check name:
+
+    ..  code-block::
+
+        🧪 Test / Linux / tox
+
+#.  For a more complicated workflow,
+    the name can be calculated based on matrix values.
+
+    ..  code-block:: yaml
+
+        jobs:
+          test:
+            name:
+              "${{
+                (startswith(matrix.runner, 'ubuntu') && 'Linux')
+                || (startswith(matrix.runner, 'macos') && 'macOS')
+                || (startswith(matrix.runner, 'windows') && 'Windows')
+              }}"
+            strategy:
+              matrix:
+                runner:
+                  - "ubuntu-latest"
+                  - "macos-latest"
+                  - "windows-latest"
+                include:
+                  - cpythons: ["3.13"]
+
+    This results in the following check names:
+
+    ..  code-block::
+
+        🧪 Test / Linux / tox
+        🧪 Test / macOS / tox
+        🧪 Test / Windows / tox
