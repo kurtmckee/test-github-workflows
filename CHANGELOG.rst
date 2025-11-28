@@ -17,6 +17,41 @@ in the ``changelog.d/`` directory on GitHub.
 
 ..  scriv-insert-here
 
+.. _changelog-1.6:
+
+1.6 — 2025-11-28
+================
+
+Changed
+-------
+
+-   Support dynamically-generated PR bodies.
+
+-   Separate tox environment creation from execution.
+
+-   Add the tox-gh plugin to group tox environment output.
+
+-   Use uv for venv creation and check-jsonschema execution.
+
+    On Windows hosts, this reduced check-jsonschema setup and execution
+    from ~15 seconds down to ~5 seconds.
+    It also reduced virtual environment creation from ~18 seconds to ~3 seconds.
+
+-   Update check-jsonschema to v0.35.0.
+
+Documentation
+-------------
+
+-   Expand the table of contents in the tox workflow documentation.
+-   Fix some typos in the documentation.
+
+-   Document how to control the job name in CI.
+
+Development
+-----------
+
+-   Test the project in CI.
+
 .. _changelog-1.5:
 
 1.5 — 2025-10-02
