@@ -25,26 +25,21 @@ in the ``changelog.d/`` directory on GitHub.
 Changed
 -------
 
--   Support dynamically-generated PR bodies.
-
--   Separate tox environment creation from execution.
-
+-   ``create-pr``: Support dynamically-generated PR bodies.
+-   ``tox``: Separate tox environment creation from execution.
 -   Add the tox-gh plugin to group tox environment output.
-
+-   Update check-jsonschema to v0.35.0.
 -   Use uv for venv creation and check-jsonschema execution.
 
     On Windows hosts, this reduced check-jsonschema setup and execution
     from ~15 seconds down to ~5 seconds.
     It also reduced virtual environment creation from ~18 seconds to ~3 seconds.
 
--   Update check-jsonschema to v0.35.0.
-
 Documentation
 -------------
 
 -   Expand the table of contents in the tox workflow documentation.
 -   Fix some typos in the documentation.
-
 -   Document how to control the job name in CI.
 
 Development
