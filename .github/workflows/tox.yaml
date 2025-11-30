@@ -401,7 +401,7 @@ jobs:
         env:
           TOX_SKIP_ENV: "${{ fromJSON(env.tox-config).tox-skip-environments-regex }}"
         run: |
-          ${{ env.venv-path }}/tox run --colored=yes --notest
+          ${{ env.venv-path }}/tox run --colored=yes --notest ${{ fromJSON(env.tox-config).tox-environments && format('-e "{0}"', join(fromJSON(env.tox-config).tox-environments, ',')) }}
 
       - name: "Run the test suite"
         env:
