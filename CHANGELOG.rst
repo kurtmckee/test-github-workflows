@@ -17,6 +17,19 @@ in the ``changelog.d/`` directory on GitHub.
 
 ..  scriv-insert-here
 
+.. _changelog-1.7:
+
+1.7 — 2025-11-30
+================
+
+Fixed
+-----
+
+-   ``tox``: Only pre-create target environments, if any.
+
+    Previously, the list of target environments was unspecified,
+    so tox would pre-create *all* tox environments.
+
 .. _changelog-1.6:
 
 1.6 — 2025-11-28
