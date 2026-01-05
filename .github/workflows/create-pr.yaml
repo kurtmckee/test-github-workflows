@@ -1,6 +1,6 @@
 # This file is a part of Kurt McKee's GitHub Workflows project.
 # https://github.com/kurtmckee/github-workflows
-# Copyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>
+# Copyright 2024-2026 Kurt McKee <contactme@kurtmckee.org>
 # SPDX-License-Identifier: MIT
 
 on:
@@ -37,9 +37,9 @@ on:
 
 
 env:
-  CHECK_JSONSCHEMA_VERSION: "0.35.0"
-  PANDOC_VERSION: "3.8.2.1"
-  UV_VERSION: "0.9.11"
+  CHECK_JSONSCHEMA_VERSION: "0.36.0"
+  PANDOC_VERSION: "3.8.3"
+  UV_VERSION: "0.9.21"
 
   # These values are used when a config value is not specified.
   default-python-version: "3.13"
@@ -88,7 +88,7 @@ jobs:
             # START: create-pr-schema.json
             {
               "$schema": "https://json-schema.org/draft-07/schema",
-              "description": "This file is a part of Kurt McKee's GitHub Workflows project.\nhttps://github.com/kurtmckee/github-workflows\nCopyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>.\nSPDX-License-Identifier: MIT",
+              "description": "This file is a part of Kurt McKee's GitHub Workflows project.\nhttps://github.com/kurtmckee/github-workflows\nCopyright 2024-2026 Kurt McKee <contactme@kurtmckee.org>.\nSPDX-License-Identifier: MIT",
               "type": "object",
               "required": [
                 "tox-label-create-changes"
