@@ -10,6 +10,10 @@
       "type": "string",
       "minLength": 1
     },
+    "timeout-minutes": {
+      "type": "integer",
+      "minimum": 1
+    },
     "tox-environments": {
       "description": "A list of tox environments to run.",
       "type": "array",

@@ -156,3 +156,13 @@ def test_tox_skip_environments_regex(tox_schema, pattern, context):
     }
     with context:
         tox_schema.validate(config)
+
+
+def test_timeout_minutes_less_than_1(tox_schema):
+    config = {
+        "runner": "ubuntu-latest",
+        "timeout-minutes": 0,
+        "cpythons": ["3.13"],
+    }
+    with pytest.raises(jsonschema.ValidationError, match="less than the minimum of 1"):
+        tox_schema.validate(config)

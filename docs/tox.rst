@@ -45,6 +45,15 @@ Runners
 
         runner: "ubuntu-latest"
 
+*   ``timeout-minutes``:
+    The maximum amount of time that the job is allowed to run.
+
+    The default value is 15 minutes.
+
+    ..  code-block:: yaml
+
+        timeout-minutes: 15
+
 
 Python interpreters
 -------------------
