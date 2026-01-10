@@ -22,6 +22,7 @@ jobs:
   tox:
     name: "tox"
     runs-on: "${{ fromJSON(inputs.config).runner }}"
+    timeout-minutes: ${{ fromJSON(inputs.config).timeout-minutes || 15 }}
     steps:
       - name: "Export config"
         id: "config-exporter"
@@ -70,6 +71,10 @@ jobs:
                 "runner": {
                   "type": "string",
                   "minLength": 1
+                },
+                "timeout-minutes": {
+                  "type": "integer",
+                  "minimum": 1
                 },
                 "tox-environments": {
                   "description": "A list of tox environments to run.",
