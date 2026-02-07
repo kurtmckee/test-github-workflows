@@ -1,6 +1,6 @@
 # This file is a part of Kurt McKee's GitHub Workflows project.
 # https://github.com/kurtmckee/github-workflows
-# Copyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>
+# Copyright 2024-2026 Kurt McKee <contactme@kurtmckee.org>
 # SPDX-License-Identifier: MIT
 
 import base64
@@ -14,13 +14,11 @@ import create_commit_request_body
 
 @pytest.fixture(autouse=True, scope="session")
 def git_status() -> str:
-    stdout = textwrap.dedent(
-        """\
+    stdout = textwrap.dedent("""\
         ?? new_file
         D  subdir/deleted_file
         M  modified_file
-        """
-    ).strip()
+        """).strip()
     with unittest.mock.patch("subprocess.check_output", lambda _: stdout.encode()):
         yield
 

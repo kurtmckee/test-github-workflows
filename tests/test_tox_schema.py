@@ -1,6 +1,6 @@
 # This file is a part of Kurt McKee's GitHub Workflows project.
 # https://github.com/kurtmckee/github-workflows
-# Copyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>
+# Copyright 2024-2026 Kurt McKee <contactme@kurtmckee.org>
 # SPDX-License-Identifier: MIT
 
 import contextlib
@@ -155,4 +155,14 @@ def test_tox_skip_environments_regex(tox_schema, pattern, context):
         "tox-skip-environments-regex": pattern,
     }
     with context:
+        tox_schema.validate(config)
+
+
+def test_timeout_minutes_less_than_1(tox_schema):
+    config = {
+        "runner": "ubuntu-latest",
+        "timeout-minutes": 0,
+        "cpythons": ["3.13"],
+    }
+    with pytest.raises(jsonschema.ValidationError, match="less than the minimum of 1"):
         tox_schema.validate(config)

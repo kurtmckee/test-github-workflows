@@ -1,0 +1,66 @@
+# This file is a part of Kurt McKee's GitHub Workflows project.
+# https://github.com/kurtmckee/github-workflows
+# Copyright 2024-2026 Kurt McKee <contactme@kurtmckee.org>
+# SPDX-License-Identifier: MIT
+
+on:
+  workflow_call:
+    outputs:
+      artifact-id:
+        description: "The artifact ID that can be subsequently downloaded"
+        value: "${{ jobs.build.outputs.artifact-id }}"
+      packages-path:
+        description: "The path to the Python packages"
+        value: "${{ jobs.build.outputs.packages-path }}"
+
+env:
+  PYTHON_VERSION: "3.13"
+  ARTIFACT_NAME: "build-python-package-${{ github.run_id }}"
+  PACKAGES_PATH: "./dist"
+
+jobs:
+  build:
+    name: "Build"
+    runs-on: "ubuntu-24.04"
+    permissions:
+      contents: "read"
+    outputs:
+      artifact-id: "${{ steps.upload-packages.outputs.artifact-id }}"
+      packages-path: "${{ steps.packages-path.outputs.packages-path }}"
+    steps:
+      - name: "Setup Python"
+        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+
+      - name: "Checkout the repository"
+        uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd" # v6.0.2
+        with:
+          ref: "${{ github.sha }}"
+          persist-credentials: "false"
+
+      - name: "Build the package"
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+        run: |
+          python -m pip install build
+          python -m build --outdir "${PACKAGES_PATH}"
+
+      - name: "Show checksums"
+        run: |
+          sha256sum "${PACKAGES_PATH}"/*
+
+      - name: "Upload the built packages"
+        id: "upload-packages"
+        uses: "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f" # v6.0.0
+        with:
+          name: "${{ env.ARTIFACT_NAME }}"
+          path: "${{ env.PACKAGES_PATH }}"
+          if-no-files-found: "error"
+          retention-days: "1"
+          overwrite: "false"
+
+      - name: "Create packages-path output"
+        id: "packages-path"
+        run: |
+          echo "packages-path=${PACKAGES_PATH}" >> "${GITHUB_OUTPUT}"

@@ -1,0 +1,297 @@
+# This file is a part of Kurt McKee's GitHub Workflows project.
+# https://github.com/kurtmckee/github-workflows
+# Copyright 2024-2026 Kurt McKee <contactme@kurtmckee.org>
+# SPDX-License-Identifier: MIT
+
+on:
+  workflow_call:
+    outputs:
+      project-version:
+        description: "The detected project version"
+        value: "${{ jobs.tag.outputs.project-version }}"
+      tag-name:
+        description: "The name of the created tag"
+        value: "${{ jobs.tag.outputs.tag-name }}"
+
+env:
+  PANDOC_VERSION: "3.8.3"
+  PYTHON_VERSION: "3.13"
+  SCRIV_VERSION: "1.8.0"
+  UV_VERSION: "0.9.21"
+
+jobs:
+  tag:
+    name: "Tag"
+    runs-on: "ubuntu-24.04"
+    permissions:
+      contents: "write"
+    outputs:
+      project-version: "${{ steps.get-tag-name.outputs.project-version }}"
+      tag-name: "${{ steps.get-tag-name.outputs.tag-name }}"
+    steps:
+      - name: "Checkout the repository"
+        uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd" # v6.0.2
+        with:
+          ref: "${{ github.sha }}"
+          fetch-depth: "0"
+          fetch-tags: "true"
+          persist-credentials: "false"
+
+      - name: "Setup Python"
+        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+
+      - name: "Install uv"
+        uses: "astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867" # v7.1.6
+        with:
+          version: "${{ env.UV_VERSION }}"
+          enable-cache: false
+
+      - name: "Get tag name"
+        id: "get-tag-name"
+        # Creates new environment variables:
+        #
+        # * TAG_NAME
+        #
+        shell: "python"
+        run: |
+          # [[[cog
+          # import src.cogger
+          # src.cogger.output("src/create_tag_and_release/get_tag_name.py")
+          # ]]]
+          # DO NOT EDIT THIS CODE BLOCK!
+          # INSTEAD, EDIT src/create_tag_and_release/get_tag_name.py.
+
+          import os
+          import pathlib
+          import tomllib
+
+
+          def main() -> None:
+              toml = tomllib.loads(pathlib.Path("pyproject.toml").read_text())
+              version = toml["project"]["version"]
+              with open(os.environ["GITHUB_ENV"], "a") as file:
+                  file.write(f"TAG_NAME=v{version}\n")
+              with open(os.environ["GITHUB_OUTPUT"], "a") as file:
+                  file.write(f"project-version={version}\n")
+                  file.write(f"tag-name=v{version}\n")
+
+
+          if __name__ == "__main__":
+              main()
+          # [[[end]]]
+
+      - name: "Verify version has no git tag conflicts"
+        id: "verify-repo-state"
+        # Creates new outputs:
+        #
+        # * tag-exists
+        #
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: "python"
+        run: |
+          # [[[cog
+          # import src.cogger
+          # src.cogger.output("src/create_tag_and_release/validate_repo_state.py")
+          # ]]]
+          # DO NOT EDIT THIS CODE BLOCK!
+          # INSTEAD, EDIT src/create_tag_and_release/validate_repo_state.py.
+
+          import os
+          import subprocess
+          import sys
+          import typing as t
+
+
+          def main() -> None:
+              tag_name = os.environ["TAG_NAME"]
+              head_sha = _get_head_sha()
+              existing_tag_sha = _get_existing_tag_sha(tag_name)
+              if existing_tag_sha is None:
+                  tag_exists = False
+              elif existing_tag_sha == head_sha:
+                  tag_exists = True
+              else:
+                  msg = (
+                      f"The {tag_name} tag commit SHA ({existing_tag_sha})"
+                      f" doesn't match HEAD ({head_sha})."
+                  )
+                  exit_with_error(msg)
+
+              with open(os.environ["GITHUB_OUTPUT"], "a") as file:
+                  file.write(f"tag-exists={str(tag_exists).lower()}\n")
+
+
+          def _get_head_sha() -> str:
+              """Get the SHA of HEAD."""
+
+              _, stdout, _ = _run_command("git", "rev-parse", "HEAD")
+              return stdout.strip()
+
+
+          def _get_existing_tag_sha(tag_name: str) -> str | None:
+              """Validate the project version and git repo state are compatible.
+
+              "Compatibility" is defined as one of:
+
+              *   The project version has no corresponding git tag ref.
+              *   A git tag ref exists for the project version,
+                  and its commit SHA matches the SHA currently checked out in HEAD.
+              """
+
+              # Check if a tag exists.
+              cmd = ("git", "rev-list", "-n", "1", f"tags/{tag_name}", "--")
+              rc, stdout, stderr = _run_command(*cmd)
+              if rc == 128 and "bad revision" in stderr:
+                  # The tag doesn't exist locally. This is the expected case.
+                  return None
+
+              # The output must be a commit SHA.
+              tag_commit_sha = stdout.strip()
+              try:
+                  int(tag_commit_sha, base=16)
+              except ValueError:
+                  msg = "Something unexpected happened."
+                  exit_with_error(msg, rc, stdout, stderr)
+
+              # A git tag already exists.
+              return tag_commit_sha
+
+
+          def _run_command(*args: str, timeout: int = 10) -> tuple[int, str, str]:
+              """Run a command."""
+
+              process = subprocess.Popen(
+                  args=args,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE,
+                  encoding="utf-8",
+              )
+              try:
+                  stdout, stderr = process.communicate(timeout=timeout)
+              except subprocess.TimeoutExpired:
+                  process.kill()
+                  stdout, stderr = process.communicate()
+
+              return process.returncode, stdout, stderr
+
+
+          def exit_with_error(
+              msg: str,
+              rc: int | None = None,
+              stdout: str | None = None,
+              stderr: str | None = None,
+          ) -> t.NoReturn:
+              print(f"::error::{msg}", file=sys.stderr)
+              if rc is not None:
+                  print(f"Return code:\n{rc}", file=sys.stderr)
+              if stdout is not None:
+                  print(f"STDOUT:\n{stdout}", file=sys.stderr)
+              if stderr is not None:
+                  print(f"STDERR:\n{stderr}", file=sys.stderr)
+              raise SystemExit(1)
+
+
+          if __name__ == "__main__":
+              main()
+          # [[[end]]]
+
+      - name: "Get GitHub Actions bot information"
+        if: "steps.verify-repo-state.outputs.tag-exists == 'false'"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Creates new environment variables:
+        #
+        # * BOT_NAME
+        # * BOT_EMAIL
+        #
+        run: |
+          # Get the Github Actions bot's email address in this environment.
+          # The email address on github.com is well-known,
+          # but the bot ID may differ on GHES instances.
+          BOT_NAME='github-actions[bot]'
+
+          BOT_ID="$(gh api "/users/${BOT_NAME}" | jq --raw-output .id)"
+          BOT_EMAIL="${BOT_ID}+${BOT_NAME}@users.noreply.github.com"
+
+          echo "BOT_NAME=${BOT_NAME}" >> "${GITHUB_ENV}"
+          echo "BOT_EMAIL=${BOT_EMAIL}" >> "${GITHUB_ENV}"
+
+      - name: "Install pandoc"
+        if: "steps.verify-repo-state.outputs.tag-exists == 'false'"
+        run: |
+          wget -nv -O pandoc.deb "https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-1-amd64.deb"
+          sudo dpkg -i ./pandoc.deb
+          rm ./pandoc.deb
+
+      - name: "Generate the annotated git tag content"
+        if: "steps.verify-repo-state.outputs.tag-exists == 'false'"
+        # Creates new environment variables:
+        #
+        # * TAG_BODY_PATH
+        #
+        run: |
+          uv run \
+            --no-managed-python \
+            --no-project \
+            --with="scriv==${SCRIV_VERSION}" \
+            scriv print --version "${TAG_NAME}" >> "${RUNNER_TEMP}/changelog-fragment.rst"
+
+          export TAG_BODY_PATH="${RUNNER_TEMP}/tag-body.gfm"
+          echo "TAG_BODY_PATH=${TAG_BODY_PATH}" >> "${GITHUB_ENV}"
+
+          pandoc \
+            --from=rst \
+            --to=gfm \
+            --shift-heading-level-by=1 \
+            --wrap=preserve \
+            --output="${TAG_BODY_PATH}" \
+            "${RUNNER_TEMP}/changelog-fragment.rst"
+
+      - name: "Create a git tag"
+        if: "steps.verify-repo-state.outputs.tag-exists == 'false'"
+        env:
+          GH_TOKEN: "${{ github.token }}"
+        run: |
+          TAG_BODY="$(cat "${TAG_BODY_PATH}")"
+          export TAG_BODY
+
+          TAG_OBJECT_SHA="$(gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${GITHUB_REPOSITORY}/git/tags" \
+            -f "type=commit" \
+            -f "tag=${TAG_NAME}" \
+            -f "message=${TAG_BODY}" \
+            -f "object=${GITHUB_SHA}" \
+            -f "tagger[name]=${BOT_NAME}" \
+            -f "tagger[email]=${BOT_EMAIL}" \
+            | jq -r '.sha' \
+          )"
+          export TAG_OBJECT_BODY
+
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${GITHUB_REPOSITORY}/git/refs" \
+            -f "ref=refs/tags/${TAG_NAME}" \
+            -f "sha=${TAG_OBJECT_SHA}"
+
+          git fetch --tags
+
+      - name: "Create a GitHub release"
+        env:
+          GH_TOKEN: "${{ github.token }}"
+        run: |
+          if gh release view "${TAG_NAME}" 1>/dev/null 2>/dev/null; then
+            echo "Release ${TAG_NAME} exists."
+          else
+            gh release create "${TAG_NAME}" \
+              --notes-from-tag \
+              --target "${GITHUB_SHA}" \
+              --title "${TAG_NAME}"
+          fi

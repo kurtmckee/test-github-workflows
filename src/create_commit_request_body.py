@@ -1,6 +1,6 @@
 # This file is a part of Kurt McKee's GitHub Workflows project.
 # https://github.com/kurtmckee/github-workflows
-# Copyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>
+# Copyright 2024-2026 Kurt McKee <contactme@kurtmckee.org>
 # SPDX-License-Identifier: MIT
 
 import base64

@@ -11,7 +11,7 @@ repos:
       - id: "check-useless-excludes"
 
   - repo: "https://github.com/pre-commit/pre-commit-hooks"
-    rev: "v6.0.0"
+    rev: "3e8a8703264a2f4a69428a0aa4dcb512790b2c8c"  # frozen: v6.0.0
     hooks:
       - id: "check-added-large-files"
       - id: "check-merge-conflict"
@@ -24,7 +24,7 @@ repos:
       - id: "trailing-whitespace"
 
   - repo: "https://github.com/asottile/pyupgrade"
-    rev: "v3.21.2"
+    rev: "75992aaa40730136014f34227e0135f63fc951b4"  # frozen: v3.21.2
     hooks:
       - id: "pyupgrade"
         name: "Enforce Python 3.13+ idioms"
@@ -32,43 +32,43 @@ repos:
           - "--py313-plus"
 
   - repo: "https://github.com/psf/black-pre-commit-mirror"
-    rev: "25.11.0"
+    rev: "ea488cebbfd88a5f50b8bd95d5c829d0bb76feb8"  # frozen: 26.1.0
     hooks:
       - id: "black"
 
   - repo: "https://github.com/pycqa/isort"
-    rev: "7.0.0"
+    rev: "0a09c783808cfe77bb3269250f663ff733d23302"  # frozen: 7.0.0
     hooks:
       - id: "isort"
 
   - repo: "https://github.com/pycqa/flake8"
-    rev: "7.3.0"
+    rev: "c48217e1fc006c2dddd14df54e83b67da15de5cd"  # frozen: 7.3.0
     hooks:
       - id: "flake8"
         additional_dependencies:
           - "flake8-toml-config==1.0.0"
-          - "flake8-bugbear==25.10.21"
+          - "flake8-bugbear==25.11.29"
 
   - repo: "https://github.com/editorconfig-checker/editorconfig-checker"
-    rev: "v3.6.0"
+    rev: "aa06cea887b26f372f9368aa53665266ec6dc364"  # frozen: v3.6.1
     hooks:
       - id: "editorconfig-checker"
 
   - repo: "https://github.com/python-jsonschema/check-jsonschema"
-    rev: "0.35.0"
+    rev: "ba8f7ac0e0c0d25bae15b628b634316e7d201db5"  # frozen: 0.36.1
     hooks:
       - id: "check-dependabot"
       - id: "check-github-workflows"
       - id: "check-metaschema"
         files: "src/.+-schema.json"
 
-  - repo: https://github.com/adhtruong/mirrors-typos
-    rev: v1.39.2
+  - repo: "https://github.com/adhtruong/mirrors-typos"
+    rev: "5fcbbb10b5c13d2993f4900a4b264a56e98f0997"  # frozen: v1.43.3
     hooks:
-      - id: typos
+      - id: "typos"
 
   - repo: "https://github.com/rhysd/actionlint"
-    rev: "v1.7.9"
+    rev: "0933c147c9d6587653d45fdcb4c497c57a65f9af"  # frozen: v1.7.10
     hooks:
       - id: "actionlint"
         additional_dependencies:
@@ -82,3 +82,23 @@ repos:
         entry: "python ./src/sync_code.py"
         always_run: true
         pass_filenames: false
+
+      - id: "cog-build-python-package-yaml"
+        name: "Cog build-python-package.yaml"
+        language: "python"
+        entry: "cog -Pre -I . .github/workflows/build-python-package.yaml"
+        files: "^.github/workflows/build-python-package\\.yaml|src/build_python_package/.+\\.py$"
+        pass_filenames: false
+        always_run: true
+        additional_dependencies:
+          - "cogapp==3.6.0"
+
+      - id: "cog-create-tag-and-release-yaml"
+        name: "Cog create-tag-and-release.yaml"
+        language: "python"
+        entry: "cog -Pre -I . .github/workflows/create-tag-and-release.yaml"
+        files: "^.github/workflows/create-tag-and-release\\.yaml|src/create_tag_and_release/.+\\.py$"
+        pass_filenames: false
+        always_run: true
+        additional_dependencies:
+          - "cogapp==3.6.0"

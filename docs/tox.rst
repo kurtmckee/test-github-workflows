@@ -1,7 +1,7 @@
 ..
     This file is a part of Kurt McKee's GitHub Workflows project.
     https://github.com/kurtmckee/github-workflows
-    Copyright 2024-2025 Kurt McKee <contactme@kurtmckee.org>
+    Copyright 2024-2026 Kurt McKee <contactme@kurtmckee.org>
     SPDX-License-Identifier: MIT
 
 
@@ -44,6 +44,15 @@ Runners
     ..  code-block:: yaml
 
         runner: "ubuntu-latest"
+
+*   ``timeout-minutes``:
+    The maximum amount of time that the job is allowed to run.
+
+    The default value is 15 minutes.
+
+    ..  code-block:: yaml
+
+        timeout-minutes: 15
 
 
 Python interpreters
