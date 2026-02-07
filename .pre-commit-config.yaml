@@ -82,3 +82,23 @@ repos:
         entry: "python ./src/sync_code.py"
         always_run: true
         pass_filenames: false
+
+      - id: "cog-build-python-package-yaml"
+        name: "Cog build-python-package.yaml"
+        language: "python"
+        entry: "cog -Pre -I . .github/workflows/build-python-package.yaml"
+        files: "^.github/workflows/build-python-package\\.yaml|src/build_python_package/.+\\.py$"
+        pass_filenames: false
+        always_run: true
+        additional_dependencies:
+          - "cogapp==3.6.0"
+
+      - id: "cog-create-tag-and-release-yaml"
+        name: "Cog create-tag-and-release.yaml"
+        language: "python"
+        entry: "cog -Pre -I . .github/workflows/create-tag-and-release.yaml"
+        files: "^.github/workflows/create-tag-and-release\\.yaml|src/create_tag_and_release/.+\\.py$"
+        pass_filenames: false
+        always_run: true
+        additional_dependencies:
+          - "cogapp==3.6.0"
