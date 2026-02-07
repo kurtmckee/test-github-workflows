@@ -32,7 +32,7 @@ repos:
           - "--py313-plus"
 
   - repo: "https://github.com/psf/black-pre-commit-mirror"
-    rev: "831207fd435b47aeffdf6af853097e64322b4d44"  # frozen: 25.12.0
+    rev: "ea488cebbfd88a5f50b8bd95d5c829d0bb76feb8"  # frozen: 26.1.0
     hooks:
       - id: "black"
 
@@ -42,7 +42,7 @@ repos:
       - id: "isort"
 
   - repo: "https://github.com/pycqa/flake8"
-    rev: "d93590f5be797aabb60e3b09f2f52dddb02f349f"  # frozen: 7.3.0
+    rev: "c48217e1fc006c2dddd14df54e83b67da15de5cd"  # frozen: 7.3.0
     hooks:
       - id: "flake8"
         additional_dependencies:
@@ -50,22 +50,22 @@ repos:
           - "flake8-bugbear==25.11.29"
 
   - repo: "https://github.com/editorconfig-checker/editorconfig-checker"
-    rev: "6b2f463397341e827af22305a5630d26a9aedc21"  # frozen: v3.6.0
+    rev: "aa06cea887b26f372f9368aa53665266ec6dc364"  # frozen: v3.6.1
     hooks:
       - id: "editorconfig-checker"
 
   - repo: "https://github.com/python-jsonschema/check-jsonschema"
-    rev: "b035497fb64e3f9faa91e833331688cc185891e6"  # frozen: 0.36.0
+    rev: "ba8f7ac0e0c0d25bae15b628b634316e7d201db5"  # frozen: 0.36.1
     hooks:
       - id: "check-dependabot"
       - id: "check-github-workflows"
       - id: "check-metaschema"
         files: "src/.+-schema.json"
 
-  - repo: https://github.com/adhtruong/mirrors-typos
-    rev: fa891ddf934aff6fc843932e2fe5087e002f07d8  # frozen: v1.41.0
+  - repo: "https://github.com/adhtruong/mirrors-typos"
+    rev: "5fcbbb10b5c13d2993f4900a4b264a56e98f0997"  # frozen: v1.43.3
     hooks:
-      - id: typos
+      - id: "typos"
 
   - repo: "https://github.com/rhysd/actionlint"
     rev: "0933c147c9d6587653d45fdcb4c497c57a65f9af"  # frozen: v1.7.10
