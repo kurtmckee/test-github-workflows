@@ -1,6 +1,7 @@
 [project]
 name = "github-workflows"
 version = "1.7"
+classifiers = ["Private :: Do not Upload"]
 
 
 # chipshot
@@ -13,6 +14,15 @@ https://github.com/kurtmckee/github-workflows
 Copyright 2024-{{ year }} Kurt McKee <contactme@kurtmckee.org>
 SPDX-License-Identifier: MIT
 """
+
+
+# coverage
+# --------
+
+[tool.coverage.report]
+exclude_also = [
+    'if __name__ == "__main__":',
+]
 
 
 # flake8

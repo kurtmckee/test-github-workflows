@@ -12,17 +12,25 @@ Kurt McKee's GitHub Workflows
 
 ---------------------------------------------------------------------------
 
-I use tox to manage testing in my Python projects,
-and I use GitHub workflows to set up and execute tox.
+This repo centralizes many of my CI workflows.
 
-This repo allows me to centralize most of my CI workflows
-so I only need to define a testing/configuration matrix in my other projects.
+In many cases, workflows in my other repositories can be minimized
+to a set of configuration values and a reference to the workflows here.
 
 
-``tox.yaml``
-============
+Table of contents
+=================
 
-The ``tox.yaml`` workflow captures best practices I found over the years
+*   `tox`_
+*   `create-pr`_
+*   `create-tag-and-release`_
+*   `build-python-package`_
+
+
+tox
+===
+
+The ``tox.yaml`` workflow captures best practices I have found over the years
 that optimize test suite execution, including tools, plugins, and caching.
 
 It has the following features:
@@ -40,11 +48,11 @@ please see `the tox workflow documentation`_ in the ``docs/`` directory.
 ..  _the tox workflow documentation: docs/tox.rst
 
 
-``create-pr.yaml``
-==================
+create-pr
+=========
 
-The ``create-pr.yaml`` workflow allows me to cut release PRs
-and to automate regular update PRs as needed.
+The ``create-pr.yaml`` workflow cuts release PRs
+and automates regular update PRs as needed.
 
 It has the following features:
 
@@ -53,7 +61,45 @@ It has the following features:
 *   Verified commits via the GitHub Actions bot account
 *   Schema validation of the inputs passed to the workflow
 
-For information about how to configure the ``create-pr.yaml`` workflow,
+For information about how to use the ``create-pr.yaml`` workflow,
 please see `the create-pr workflow documentation`_ in the ``docs/`` directory.
 
 ..  _the create-pr workflow documentation: docs/create-pr.rst
+
+
+create-tag-and-release
+======================
+
+The ``create-tag-and-release.yaml`` workflow creates a git tag and a GitHub release.
+
+It has the following features:
+
+*   The project version is extracted from ``pyproject.toml``.
+*   The version's CHANGELOG entry is extracted using scriv.
+*   An annotated git tag named ``v$VERSION`` is created.
+    The tag body contains the CHANGELOG entry in GitHub-formatted Markdown.
+*   A GitHub release, also named ``v$VERSION``, is created.
+
+For information about how te use the ``create-tag-and-release.yaml`` workflow,
+please see `the create-tag-and-release workflow documentation`_
+in the ``docs/`` directory.
+
+..  _the create-tag-and-release workflow documentation: docs/create-tag-and-release.rst
+
+
+build-python-package
+====================
+
+The ``build-python-package.yaml`` workflow builds a Python sdist and wheel,
+and uploads an artifact containing these.
+
+It has the following features:
+
+*   The project is built using the ``build`` module.
+*   An artifact is uploaded to GitHub, suitable for download and publication to PyPI.
+
+For information about how te use the ``build-python-package.yaml`` workflow,
+please see `the build-python-package workflow documentation`_
+in the ``docs/`` directory.
+
+..  _the build-python-package workflow documentation: docs/build-python-package.rst
