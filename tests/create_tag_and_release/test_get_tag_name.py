@@ -13,12 +13,10 @@ def test_get_tag_name(fs, monkeypatch):
     version = "1.2.3"
     fs.create_file(
         "pyproject.toml",
-        contents=textwrap.dedent(
-            f"""
+        contents=textwrap.dedent(f"""
             [project]
             version = "{version}"
-            """
-        ),
+            """),
     )
     monkeypatch.setenv("GITHUB_ENV", "github-env.txt")
     monkeypatch.setenv("GITHUB_OUTPUT", "github-output.txt")

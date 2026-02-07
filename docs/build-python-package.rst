@@ -89,3 +89,4 @@ Workflow example
             uses: "actions/download-artifact@..."
             with:
               artifact-ids: "${{ needs.build.outputs.artifact-id }}"
+              path: "${{ needs.build.outputs.packages-path }}"
