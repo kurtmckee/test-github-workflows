@@ -17,6 +17,52 @@ in the ``changelog.d/`` directory on GitHub.
 
 ..  scriv-insert-here
 
+.. _changelog-1.8:
+
+1.8 — 2026-02-07
+================
+
+Breaking changes
+----------------
+
+-   ``tox.yaml``: Timeout jobs after 15 minutes by default.
+
+Added
+-----
+
+-   ``tox.yaml``: Add a ``timeout-minutes`` key for configuring job timeouts.
+
+*   Add a workflow named ``create-tag-and-release``.
+
+    The initial version has the following features:
+
+    *   The project version is extracted from ``pyproject.toml``.
+    *   The version's CHANGELOG entry is extracted using scriv.
+    *   An annotated git tag named ``v$VERSION`` is created.
+        The tag body contains the CHANGELOG entry in GitHub-formatted Markdown.
+    *   A GitHub release, also named ``v$VERSION``, is created.
+
+*   Add a workflow named ``build-python-package``.
+
+    The initial version has the following features:
+
+    *   The project is built using the ``build`` module.
+    *   An artifact is uploaded to GitHub, suitable for download and publication to PyPI.
+
+Changed
+-------
+
+- Use check-jsonschema v0.36.0.
+- Use pandoc v3.8.3.
+- Use uv v0.9.21.
+
+Development
+-----------
+
+- Freeze pre-commit hooks to git SHAs, not git tags.
+
+- Add a CODEOWNERS file.
+
 .. _changelog-1.7:
 
 1.7 — 2025-11-30
