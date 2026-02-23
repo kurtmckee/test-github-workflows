@@ -7,7 +7,7 @@ import re
 
 import pytest
 
-import tox_config_transformer
+import workflow_assets.tox.config_transformer
 
 
 def test_tox_pre_post_environments():
@@ -25,7 +25,7 @@ def test_tox_pre_post_environments():
         "cache-key-paths": [".mypy_cache"],
     }
 
-    tox_config_transformer.transform_config(config)
+    workflow_assets.tox.config_transformer.transform_config(config)
     assert "tox-environments-from-pythons" not in config
     assert "tox-factors" not in config
     assert "tox-pre-environments" not in config
@@ -50,7 +50,7 @@ def test_tox_environments():
         "tox-environments": ["a", "c", "b"],
     }
 
-    tox_config_transformer.transform_config(config)
+    workflow_assets.tox.config_transformer.transform_config(config)
     assert "tox-environments-from-pythons" not in config
     assert "tox-factors" not in config
     assert "tox-pre-environments" not in config
@@ -73,7 +73,7 @@ def test_tox_pythons_as_environments():
         "tox-environments-from-pythons": True,
     }
 
-    tox_config_transformer.transform_config(config)
+    workflow_assets.tox.config_transformer.transform_config(config)
     assert "tox-environments-from-pythons" not in config
     assert "tox-factors" not in config
     assert "tox-pre-environments" not in config
@@ -98,7 +98,7 @@ def test_tox_factors():
         "tox-post-environments": ["post"],
     }
 
-    tox_config_transformer.transform_config(config)
+    workflow_assets.tox.config_transformer.transform_config(config)
     assert "tox-environments-from-pythons" not in config
     assert "tox-factors" not in config
     assert "tox-pre-environments" not in config
@@ -127,7 +127,7 @@ def test_tox_stable_cpython_injection(key, value, expected):
         key: value,
     }
 
-    tox_config_transformer.transform_config(config)
+    workflow_assets.tox.config_transformer.transform_config(config)
     assert config["python-versions-requested"] == expected
     assert config["python-versions-required"] == expected + "\n3.13"
 
@@ -140,7 +140,7 @@ def test_tox_stable_cpython_injection_unnecessary():
         "cpythons": ["3.13"],
     }
 
-    tox_config_transformer.transform_config(config)
+    workflow_assets.tox.config_transformer.transform_config(config)
     assert config["python-versions-requested"] == "3.13"
     assert config["python-versions-required"] == "3.13"
 
@@ -169,6 +169,6 @@ def test_tox_skip_environments(strings, pattern, expected):
     if pattern is not None:
         config["tox-skip-environments-regex"] = pattern
 
-    tox_config_transformer.transform_config(config)
+    workflow_assets.tox.config_transformer.transform_config(config)
     assert config["tox-skip-environments-regex"] == expected
     assert re.compile(config["tox-skip-environments-regex"])

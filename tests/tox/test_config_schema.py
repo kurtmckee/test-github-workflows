@@ -15,8 +15,9 @@ import pytest
 
 @pytest.fixture(scope="session")
 def tox_schema():
-    tox_schema_path = pathlib.Path(__file__).parent.parent / "src/tox-schema.json"
-    tox_schema = json.loads(tox_schema_path.read_text())
+    root = pathlib.Path(__file__).parent.parent.parent
+    schema_path = root / "src/workflow_assets/tox/config-schema.json"
+    tox_schema = json.loads(schema_path.read_text())
     yield jsonschema.Draft7Validator(
         schema=tox_schema,
         format_checker=jsonschema.FormatChecker(),

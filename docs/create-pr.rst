@@ -13,7 +13,7 @@ then commits all of the changes and creates a draft PR.
 
 The reusable workflow takes two inputs:
 
-*   ``config``, which must be a serialized JSON object with keys described below
+*   ``config``, which must be a serialized JSON object with keys described below.
 *   ``version``, which is an optional string that can be referenced by ``config`` values
     and by tox environments.
 
@@ -82,7 +82,7 @@ Required config keys
         deps =
             poetry
             scriv
-        passenv =
+        pass_env =
             PR_BODY_OUTPUT_PATH
             VERSION
         commands =
@@ -91,7 +91,6 @@ Required config keys
             poetry version "{env:VERSION}"
             scriv collect
             scriv print --version "{env:VERSION}" --output "{env:PR_BODY_OUTPUT_PATH:{env:VERSION}.rst}"
-
 
 
 Optional version input
@@ -110,7 +109,7 @@ Tox must be configured to pass ``VERSION`` into the test environment:
 ..  code-block:: ini
 
     [testenv:prep-release]
-    passenv =
+    pass_env =
         VERSION
     deps =
         poetry
@@ -121,13 +120,6 @@ Tox must be configured to pass ``VERSION`` into the test environment:
 Optional config keys
 ====================
 
-
-*   ``runner``:
-    The runner to use.
-
-    ..  code-block:: yaml
-
-        runner: "ubuntu-latest"
 
 *   ``python-version``:
     The CPython interpreter version to install. Must be a string.
@@ -188,6 +180,12 @@ Optional config keys
     ..  code-block:: yaml
 
         pr-body: "Exactly what it says on the tin."
+
+*   ``pr-body-input-format``:
+    The format of the PR body. Must be a string.
+
+    Currently only ``gfm`` and ``rst`` are allowed values.
+    The default is ``rst``.
 
 
 Passing the config to the workflow
