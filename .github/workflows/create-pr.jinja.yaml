@@ -73,6 +73,9 @@ jobs:
     #]#
     name: "create-pr"
     runs-on: "ubuntu-24.04"
+    permissions:
+      contents: "write"
+      pull-requests: "write"
     steps:
       - name: "Export config"
         id: "config-exporter"
