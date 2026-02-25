@@ -74,8 +74,21 @@ jobs:
     name: "create-pr"
     runs-on: "ubuntu-24.04"
     permissions:
+      actions: write
+      artifact-metadata: write
+      attestations: write
+      checks: write
       contents: "write"
+      deployments: write
+      discussions: write
+      id-token: write
+      issues: write
+      models: read
+      packages: write
+      pages: write
       pull-requests: "write"
+      security-events: write
+      statuses: write
     steps:
       - name: "Export config"
         id: "config-exporter"
@@ -205,9 +218,11 @@ jobs:
           VERSION: "${{ inputs.version }}"
           GH_TOKEN: "${{ github.token }}"
           COMMIT_TITLE: "${{ fromJSON(inputs.config).commit-title || env.default-commit-title }}"
+          GRAPHQL_FILE: "${{ runner.temp }}/graphql-input.json"
         run: |
           git push origin HEAD:"${{ fromJSON(inputs.config).branch-name || env.default-branch-name }}"
-          gh api graphql --input "${{ runner.temp }}/graphql-input.json"
+          cat "${GRAPHQL_FILE}" | jq
+          gh api graphql --verbose --input="${GRAPHQL_FILE}"
 
       - name: "Generate the PR body"
         env:
