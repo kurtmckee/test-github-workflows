@@ -77,7 +77,7 @@ def generate_request_body(file_changes: dict[str, typing.Any]) -> dict[str, typi
 
 
 def inject_version(text: str) -> str:
-    version = os.getenv("VERSION", "VERSION_NOT_FOUND")
+    version = os.getenv("VERSION") or "VERSION_NOT_FOUND"
     return re.sub(r"\$version", version, text, flags=re.I)
 
 

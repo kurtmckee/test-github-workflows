@@ -86,6 +86,9 @@ jobs:
   create-pr:
     name: "create-pr"
     runs-on: "ubuntu-24.04"
+    permissions:
+      contents: "write"
+      pull-requests: "write"
     steps:
       - name: "Export config"
         id: "config-exporter"
@@ -364,7 +367,7 @@ jobs:
 
 
           def inject_version(text: str) -> str:
-              version = os.getenv("VERSION", "VERSION_NOT_FOUND")
+              version = os.getenv("VERSION") or "VERSION_NOT_FOUND"
               return re.sub(r"\$version", version, text, flags=re.I)
 
 
