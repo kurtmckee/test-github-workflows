@@ -205,9 +205,11 @@ jobs:
           VERSION: "${{ inputs.version }}"
           GH_TOKEN: "${{ github.token }}"
           COMMIT_TITLE: "${{ fromJSON(inputs.config).commit-title || env.default-commit-title }}"
+          GRAPHQL_FILE: "${{ runner.temp }}/graphql-input.json"
         run: |
           git push origin HEAD:"${{ fromJSON(inputs.config).branch-name || env.default-branch-name }}"
-          gh api graphql --input "${{ runner.temp }}/graphql-input.json"
+          cat "${GRAPHQL_FILE}" | jq
+          gh api graphql --verbose --input="${GRAPHQL_FILE}"
 
       - name: "Generate the PR body"
         env:
