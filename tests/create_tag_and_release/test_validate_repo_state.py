@@ -8,7 +8,7 @@ import typing as t
 
 import pytest
 
-import create_tag_and_release.validate_repo_state
+from workflow_assets.create_tag_and_release import validate_repo_state
 
 
 def create_runner_mock(
@@ -48,11 +48,9 @@ def test_validate_repo_state_common_case(fs, monkeypatch):
     )
     monkeypatch.setenv("TAG_NAME", "v1.2.3")
     monkeypatch.setenv("GITHUB_OUTPUT", "outputs.txt")
-    monkeypatch.setattr(
-        create_tag_and_release.validate_repo_state, "_run_command", runner_mock
-    )
+    monkeypatch.setattr(validate_repo_state, "_run_command", runner_mock)
 
-    create_tag_and_release.validate_repo_state.main()
+    validate_repo_state.main()
 
     assert "tag-exists=false" in pathlib.Path("outputs.txt").read_text().splitlines()
 
@@ -68,11 +66,9 @@ def test_validate_repo_state_tag_exists(fs, monkeypatch):
     )
     monkeypatch.setenv("TAG_NAME", "v1.2.3")
     monkeypatch.setenv("GITHUB_OUTPUT", "outputs.txt")
-    monkeypatch.setattr(
-        create_tag_and_release.validate_repo_state, "_run_command", runner_mock
-    )
+    monkeypatch.setattr(validate_repo_state, "_run_command", runner_mock)
 
-    create_tag_and_release.validate_repo_state.main()
+    validate_repo_state.main()
 
     assert "tag-exists=true" in pathlib.Path("outputs.txt").read_text().splitlines()
 
@@ -88,12 +84,10 @@ def test_validate_repo_state_tag_does_not_match_head(fs, monkeypatch, capsys):
     )
     monkeypatch.setenv("TAG_NAME", "v1.2.3")
     monkeypatch.setenv("GITHUB_OUTPUT", "outputs.txt")
-    monkeypatch.setattr(
-        create_tag_and_release.validate_repo_state, "_run_command", runner_mock
-    )
+    monkeypatch.setattr(validate_repo_state, "_run_command", runner_mock)
 
     with pytest.raises(SystemExit):
-        create_tag_and_release.validate_repo_state.main()
+        validate_repo_state.main()
 
     assert not pathlib.Path("outputs.txt").is_file()
     stdout, stderr = capsys.readouterr()
@@ -122,12 +116,10 @@ def test_unexpected_git_rev_list_behavior(fs, monkeypatch, capsys):
     )
     monkeypatch.setenv("TAG_NAME", "v1.2.3")
     monkeypatch.setenv("GITHUB_OUTPUT", "outputs.txt")
-    monkeypatch.setattr(
-        create_tag_and_release.validate_repo_state, "_run_command", runner_mock
-    )
+    monkeypatch.setattr(validate_repo_state, "_run_command", runner_mock)
 
     with pytest.raises(SystemExit):
-        create_tag_and_release.validate_repo_state.main()
+        validate_repo_state.main()
 
     assert not pathlib.Path("outputs.txt").is_file()
 
@@ -141,7 +133,7 @@ def test_unexpected_git_rev_list_behavior(fs, monkeypatch, capsys):
 
 def test_run_command_success():
     cmd = ("python", "-V")
-    rc, stdout, stderr = create_tag_and_release.validate_repo_state._run_command(*cmd)
+    rc, stdout, stderr = validate_repo_state._run_command(*cmd)
 
     assert rc == 0
     assert "Python" in stdout
@@ -150,7 +142,7 @@ def test_run_command_success():
 
 def test_run_command_timeout():
     cmd = ("python", "-c", "import time; time.sleep(1)")
-    rc, stdout, stderr = create_tag_and_release.validate_repo_state._run_command(
+    rc, stdout, stderr = validate_repo_state._run_command(
         *cmd,
         timeout=0,
     )

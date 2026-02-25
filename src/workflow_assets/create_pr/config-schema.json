@@ -6,12 +6,6 @@
     "tox-label-create-changes"
   ],
   "properties": {
-    "runner": {
-      "description": "The runner for the workflow.",
-      "type": "string",
-      "minLength": 1,
-      "default": "ubuntu-latest"
-    },
     "python-version": {
       "description": "The Python version to use when running tox.",
       "type": "string",

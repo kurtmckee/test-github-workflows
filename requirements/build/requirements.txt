@@ -1,0 +1,4 @@
+build==1.4.0 ; python_version == "3.13"
+colorama==0.4.6 ; python_version == "3.13" and os_name == "nt"
+packaging==26.0 ; python_version == "3.13"
+pyproject-hooks==1.2.0 ; python_version == "3.13"

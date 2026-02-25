@@ -5,15 +5,16 @@
 
 import base64
 import textwrap
+import typing
 import unittest.mock
 
 import pytest
 
-import create_commit_request_body
+from workflow_assets.create_pr import create_commit_request_body
 
 
 @pytest.fixture(autouse=True, scope="session")
-def git_status() -> str:
+def git_status() -> typing.Iterator[None]:
     stdout = textwrap.dedent("""\
         ?? new_file
         D  subdir/deleted_file

@@ -37,7 +37,7 @@ repos:
       - id: "black"
 
   - repo: "https://github.com/pycqa/isort"
-    rev: "0a09c783808cfe77bb3269250f663ff733d23302"  # frozen: 7.0.0
+    rev: "3459bdee0962449aad91235273c3fd1306dfebe5"  # frozen: 8.0.0
     hooks:
       - id: "isort"
 
@@ -55,7 +55,7 @@ repos:
       - id: "editorconfig-checker"
 
   - repo: "https://github.com/python-jsonschema/check-jsonschema"
-    rev: "ba8f7ac0e0c0d25bae15b628b634316e7d201db5"  # frozen: 0.36.1
+    rev: "f761d025eb06bcd6a45bf152ba3593c9b8ad9a9b"  # frozen: 0.36.2
     hooks:
       - id: "check-dependabot"
       - id: "check-github-workflows"
@@ -63,42 +63,26 @@ repos:
         files: "src/.+-schema.json"
 
   - repo: "https://github.com/adhtruong/mirrors-typos"
-    rev: "5fcbbb10b5c13d2993f4900a4b264a56e98f0997"  # frozen: v1.43.3
+    rev: "1dba9b5417293c3976bb185228a6aff50616b548"  # frozen: v1.43.5
     hooks:
       - id: "typos"
 
+  - repo: "local"
+    hooks:
+      - id: "render-workflow-templates"
+        name: "Render workflow templates"
+        language: "python"
+        entry: "python src/render-templates.py"
+        always_run: true
+        pass_filenames: false
+        additional_dependencies:
+          # additional_dependencies source: requirements/templating/requirements.txt
+          - 'jinja2==3.1.5 ; python_version == "3.13"'
+          - 'markupsafe==3.0.3 ; python_version == "3.13"'
+
   - repo: "https://github.com/rhysd/actionlint"
-    rev: "0933c147c9d6587653d45fdcb4c497c57a65f9af"  # frozen: v1.7.10
+    rev: "393031adb9afb225ee52ae2ccd7a5af5525e03e8"  # frozen: v1.7.11
     hooks:
       - id: "actionlint"
         additional_dependencies:
-          - "github.com/wasilibs/go-shellcheck/cmd/shellcheck@v0.11.1"
-
-  - repo: "local"
-    hooks:
-      - id: "sync-source-contents"
-        name: "Synchronize source file contents to YAML files"
-        language: "python"
-        entry: "python ./src/sync_code.py"
-        always_run: true
-        pass_filenames: false
-
-      - id: "cog-build-python-package-yaml"
-        name: "Cog build-python-package.yaml"
-        language: "python"
-        entry: "cog -Pre -I . .github/workflows/build-python-package.yaml"
-        files: "^.github/workflows/build-python-package\\.yaml|src/build_python_package/.+\\.py$"
-        pass_filenames: false
-        always_run: true
-        additional_dependencies:
-          - "cogapp==3.6.0"
-
-      - id: "cog-create-tag-and-release-yaml"
-        name: "Cog create-tag-and-release.yaml"
-        language: "python"
-        entry: "cog -Pre -I . .github/workflows/create-tag-and-release.yaml"
-        files: "^.github/workflows/create-tag-and-release\\.yaml|src/create_tag_and_release/.+\\.py$"
-        pass_filenames: false
-        always_run: true
-        additional_dependencies:
-          - "cogapp==3.6.0"
+          - "github.com/wasilibs/go-shellcheck/cmd/shellcheck@4e7020840c303923eb1ab846fc446d77be892570"

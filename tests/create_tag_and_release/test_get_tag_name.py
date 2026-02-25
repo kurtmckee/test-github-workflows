@@ -6,7 +6,7 @@
 import pathlib
 import textwrap
 
-import create_tag_and_release.get_tag_name
+from workflow_assets.create_tag_and_release import get_tag_name
 
 
 def test_get_tag_name(fs, monkeypatch):
@@ -21,7 +21,7 @@ def test_get_tag_name(fs, monkeypatch):
     monkeypatch.setenv("GITHUB_ENV", "github-env.txt")
     monkeypatch.setenv("GITHUB_OUTPUT", "github-output.txt")
 
-    create_tag_and_release.get_tag_name.main()
+    get_tag_name.main()
 
     envvars = pathlib.Path("github-env.txt").read_text().strip().splitlines()
     assert f"TAG_NAME=v{version}" in envvars  # with 'v' prefix

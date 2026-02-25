@@ -1,0 +1,254 @@
+# This file is a part of Kurt McKee's GitHub Workflows project.
+# https://github.com/kurtmckee/github-workflows
+# Copyright 2024-2026 Kurt McKee <contactme@kurtmckee.org>
+# SPDX-License-Identifier: MIT
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        type: "string"
+        required: true
+        description: |
+          The configuration object.
+      version:
+        type: "string"
+        required: false
+        description: |
+          The version to use when creating the release.
+
+          This must be a valid version specifier (see PEP 440),
+          but the workflow itself doesn't currently validate the version.
+
+          The version can be referenced in several configuration variables
+          by using the name `$VERSION`:
+
+          * `branch-name` (example: `release/$VERSION`)
+          * `commit-title` (example: `Update metadata for v$VERSION`)
+          * `pr-title` (example: `Release v$VERSION`)
+
+          The version will also be available as an environment variable when tox is run:
+
+          ```
+          poetry version "$VERSION"
+          ```
+
+          Remember to set the tox `pass_env` configuration value to pass `VERSION`.
+
+
+env:
+  PYTHON_VERSION: "[[ PYTHON_VERSION ]]"
+  UV_VERSION: "[[ UV_VERSION ]]"
+  PANDOC_VERSION: "3.8.3"
+  CHECK_JSONSCHEMA_REQUIREMENTS: |
+    [[ include_requirements("check_jsonschema") | indent(4) ]]
+  TOX_REQUIREMENTS: |
+    [[ include_requirements("tox") | indent(4) ]]
+
+  # These values are used when a config value is not specified.
+  default-branch-from: "main"
+  default-branch-name: "updates"
+  default-commit-title: "Updates"
+  default-pr-base: "main"
+  default-pr-title: "Updates"
+  default-pr-body-input-format: "rst"
+
+jobs:
+  #[#-
+  # Halt execution if an attempt is made to run the template directly.
+  # This job is enclosed in a Jinja comment and will not be rendered.
+  halt:
+    name: "Halt"
+    runs-on: "ubuntu-slim"
+    steps:
+      - name: "Halt"
+        run: |
+          echo "::error::⚠️ Do not run the workflow template directly."
+          exit 1
+  #]#
+  create-pr:
+    #[#-
+    # The `needs` key is in a Jinja comment and will not be rendered.
+    needs: ["halt"]
+    #]#
+    name: "create-pr"
+    runs-on: "ubuntu-24.04"
+    steps:
+      - name: "Export config"
+        id: "config-exporter"
+        shell: "bash"
+        # Loading the input from an environment variable avoids injection attacks.
+        env:
+          inputs_config: "${{ inputs.config }}"
+        run: |
+          echo "$inputs_config" > ".create-pr-config.raw.json"
+
+      - name: "Setup Python for base requirements"
+        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+
+      - name: "Install uv"
+        uses: "astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867" # v7.1.6
+        with:
+          version: "${{ env.UV_VERSION }}"
+          enable-cache: "false"
+          ignore-empty-workdir: "true"
+
+      # If a previous workflow run successfully validated an identical config object,
+      # a cache hit is sufficient to demonstrate that no further validation is required.
+      - name: "Check if raw config is already validated"
+        id: "lookup-config-cache"
+        uses: "actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb" # v5.0.1
+        with:
+          lookup-only: true
+          path: ".create-pr-config.raw.json"
+          key: "create-pr-config-${{ hashFiles('.create-pr-config.raw.json') }}"
+
+      - name: "Write config schema"
+        if: "${{ steps.lookup-config-cache.outputs.cache-hit == false }}"
+        shell: "bash"
+        env:
+          CONFIG_SCHEMA: |
+            [[ include_file("config-schema.json") | indent(12) ]]
+        run: |
+          echo "${CONFIG_SCHEMA}" > "${RUNNER_TEMP}/config-schema.json"
+
+      - name: "Validate the raw config against the schema"
+        if: "${{ steps.lookup-config-cache.outputs.cache-hit == false }}"
+        shell: "bash"
+        run: |
+          REQUIREMENTS_PATH="$(mktemp)"
+          echo "${CHECK_JSONSCHEMA_REQUIREMENTS}" > "${REQUIREMENTS_PATH}"
+
+          uv run \
+            --no-managed-python \
+            --no-project \
+            --with-requirements="${REQUIREMENTS_PATH}" \
+            check-jsonschema --schemafile "${RUNNER_TEMP}/config-schema.json" ".create-pr-config.raw.json"
+
+      - name: "Create a 'config-is-validated' cache key"
+        if: "${{ steps.lookup-config-cache.outputs.cache-hit == false }}"
+        uses: "actions/cache/save@9255dc7a253b0ccc959486e2bca901246202afeb" # v5.0.1
+        with:
+          path: ".create-pr-config.raw.json"
+          key: "${{ steps.lookup-config-cache.outputs.cache-primary-key }}"
+
+      - name: "Install pandoc"
+        env:
+          PANDOC_DEB_URL: "https://github.com/jgm/pandoc/releases/download/${{ env.PANDOC_VERSION }}/pandoc-${{ env.PANDOC_VERSION }}-1-amd64.deb"
+        run: |
+          wget -nv -O pandoc.deb "${PANDOC_DEB_URL}"
+          sudo dpkg -i ./pandoc.deb
+          rm ./pandoc.deb
+
+      - name: "Checkout the repository"
+        uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd" # v6.0.2
+        with:
+          ref: "${{ fromJSON(inputs.config).branch-from || env.default-branch-from }}"
+          fetch-depth: 0
+
+      - name: "Create a virtual environment"
+        shell: "bash"
+        run: |
+          REQUIREMENTS_PATH="$(mktemp)"
+          echo "${TOX_REQUIREMENTS}" > "${REQUIREMENTS_PATH}"
+
+          uv venv --no-project --no-managed-python .venv
+          echo "*" > ".venv/.gitignore"
+          uv pip install --no-managed-python --directory=.venv --requirements="${REQUIREMENTS_PATH}"
+
+      - name: "Setup the requested Python version"
+        if: "${{ fromJSON(inputs.config).python-version != '' && fromJSON(inputs.config).python-version != env.PYTHON_VERSION }}"
+        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+        with:
+          python-version: "${{ fromJSON(inputs.config).python-version }}"
+          allow-prereleases: true
+
+      - name: "Generate changes"
+        env:
+          PR_BODY: "${{ fromJSON(inputs.config).pr-body }}"
+          PR_BODY_OUTPUT_PATH: "${{ runner.temp }}/pr-body-fragment.txt"
+          VERSION: "${{ inputs.version }}"
+          TOX_LABEL: "${{ fromJSON(inputs.config).tox-label-create-changes }}"
+        run: |
+          .venv/bin/tox run --colored yes -m "${TOX_LABEL}"
+
+      - name: "Setup Python for commit generation"
+        if: "${{ fromJSON(inputs.config).python-version != '' && fromJSON(inputs.config).python-version != env.PYTHON_VERSION }}"
+        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+          allow-prereleases: true
+
+      - name: "Generate commit request body"
+        shell: "python"
+        env:
+          VERSION: "${{ inputs.version }}"
+          BRANCH_NAME: "${{ fromJSON(inputs.config).branch-name || env.default-branch-name }}"
+          COMMIT_TITLE: "${{ fromJSON(inputs.config).commit-title || env.default-commit-title }}"
+          OUTPUT_FILE: "${{ runner.temp }}/graphql-input.json"
+        run: |
+          [[ include_file("create_commit_request_body.py") | indent(10) ]]
+
+      - name: "Push a new branch"
+        env:
+          VERSION: "${{ inputs.version }}"
+          GH_TOKEN: "${{ github.token }}"
+          COMMIT_TITLE: "${{ fromJSON(inputs.config).commit-title || env.default-commit-title }}"
+        run: |
+          git push origin HEAD:"${{ fromJSON(inputs.config).branch-name || env.default-branch-name }}"
+          gh api graphql --input "${{ runner.temp }}/graphql-input.json"
+
+      - name: "Generate the PR body"
+        env:
+          PR_BODY: "${{ fromJSON(inputs.config).pr-body }}"
+          PR_BODY_PATH: "${{ runner.temp }}/pr-body-fragment.txt"
+          PR_BODY_INPUT_FORMAT: "${{ fromJSON(inputs.config).pr-body-input-format || env.default-pr-body-input-format }}"
+          VERSION: "${{ inputs.version }}"
+        run: |
+          # If a static PR body was provided, use it.
+          # This unconditionally overwrites any PR body
+          # that might have been created when tox ran above.
+          if [ ! -z "${PR_BODY}" ]; then
+              echo "${PR_BODY}" > "${PR_BODY_PATH}"
+          fi
+
+          # If a PR body file was not yet generated, create a blank one.
+          if [ ! -f "${PR_BODY_PATH}" ]; then
+              touch "${PR_BODY_PATH}"
+          fi
+
+          # Convert the content to GitHub-formatted Markdown.
+          pandoc \
+            --from "${PR_BODY_INPUT_FORMAT}" \
+            --to gfm \
+            --wrap preserve \
+            --shift-heading-level-by 1 \
+            "${PR_BODY_PATH}" \
+            --output "${RUNNER_TEMP}/pr-body-fragment.gfm"
+
+          # If a version was provided, augment the PR body with the version as its header.
+          if [ ! -z "${VERSION}" ]; then
+            echo "# ${VERSION}" > "${RUNNER_TEMP}/pr-body.gfm"
+          fi
+
+          cat "${RUNNER_TEMP}/pr-body-fragment.gfm" >> "${RUNNER_TEMP}/pr-body.gfm"
+
+      - name: "Create a PR"
+        env:
+          VERSION: "${{ inputs.version }}"
+          GH_TOKEN: "${{ github.token }}"
+        run: |
+          gh pr create \
+            --draft \
+            --head "${{ fromJSON(inputs.config).branch-name || env.default-branch-name }}" \
+            --base "${{ fromJSON(inputs.config).pr-base || env.default-pr-base }}" \
+            --title "${{ fromJSON(inputs.config).pr-title || env.default-pr-title }}" \
+            --body-file "${RUNNER_TEMP}/pr-body.gfm"
