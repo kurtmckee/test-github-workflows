@@ -5,7 +5,7 @@ on:
 
 jobs:
   prep-updates:
-    name: "Prep project updates"
+    name: "${{ matrix.commit-title }}"
 
     permissions:
       contents: "write"
