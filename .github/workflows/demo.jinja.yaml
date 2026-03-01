@@ -53,12 +53,12 @@ jobs:
           echo "$inputs_config" > ".tox-config.raw.json"
 
       - name: "Setup Python for tox config validation/transformation"
-        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
+        uses: "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" # v6.2.0
         with:
           python-version: "${{ env.PYTHON_VERSION }}"
 
       - name: "Install uv"
-        uses: "astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867" # v7.1.6
+        uses: "astral-sh/setup-uv@5a095e7a2014a4212f075830d4f7277575a9d098" # v7.3.1
         with:
           version: "${{ env.UV_VERSION }}"
           enable-cache: false
@@ -67,7 +67,7 @@ jobs:
       # a cache hit is sufficient to demonstrate that no further validation is required.
       - name: "Check if raw tox config is already validated"
         id: "lookup-config-cache"
-        uses: "actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb" # v5.0.1
+        uses: "actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306" # v5.0.3
         with:
           lookup-only: true
           path: ".tox-config.raw.json"
@@ -97,7 +97,7 @@ jobs:
 
       - name: "Create a 'config-is-validated' cache key"
         if: "steps.lookup-config-cache.outputs.cache-hit == false"
-        uses: "actions/cache/save@9255dc7a253b0ccc959486e2bca901246202afeb" # v5.0.1
+        uses: "actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306" # v5.0.3
         with:
           path: ".tox-config.raw.json"
           key: "${{ steps.lookup-config-cache.outputs.cache-primary-key }}"
@@ -109,7 +109,7 @@ jobs:
           [[ include_file("config_transformer.py") | indent(10) ]]
 
       - name: "Checkout the repository"
-        uses: "actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8" # v6.0.1
+        uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd" # v6.0.2
 
       - name: "Save the tox config to a file for cache-busting"
         shell: "bash"
@@ -134,7 +134,7 @@ jobs:
           cat .hash-files.sha
 
       - name: "Setup Pythons (required)"
-        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
+        uses: "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" # v6.2.0
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
         with:
@@ -146,7 +146,7 @@ jobs:
 
       - name: "Restore cache"
         id: "restore-cache"
-        uses: "actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb" # v5.0.1
+        uses: "actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306" # v5.0.3
         with:
           path: |
             .tox/
@@ -195,7 +195,7 @@ jobs:
 
       - name: "Setup Pythons (requested)"
         if: "fromJSON(env.tox-config).python-versions-required != fromJSON(env.tox-config).python-versions-requested"
-        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
+        uses: "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" # v6.2.0
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
         with:
