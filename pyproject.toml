@@ -1,6 +1,6 @@
 [project]
 name = "bogus"
-version = "1.7"
+version = "1.8"
 description = "bogus"
 readme = "README.md"
 authors = [
