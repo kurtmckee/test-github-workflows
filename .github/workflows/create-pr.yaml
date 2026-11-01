@@ -101,14 +101,14 @@ jobs:
           echo "$inputs_config" > ".create-pr-config.raw.json"
 
       - name: "Setup Python for base requirements"
-        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
+        uses: "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0" # v7.1.0
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
         with:
           python-version: "${{ env.PYTHON_VERSION }}"
 
       - name: "Install uv"
-        uses: "astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867" # v7.1.6
+        uses: "astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2" # v10.3.3
         with:
           version: "${{ env.UV_VERSION }}"
           enable-cache: "false"
@@ -118,7 +118,7 @@ jobs:
       # a cache hit is sufficient to demonstrate that no further validation is required.
       - name: "Check if raw config is already validated"
         id: "lookup-config-cache"
-        uses: "actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb" # v5.0.1
+        uses: "actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9" # v6.1.0
         with:
           lookup-only: true
           path: ".create-pr-config.raw.json"
@@ -225,7 +225,7 @@ jobs:
 
       - name: "Create a 'config-is-validated' cache key"
         if: "${{ steps.lookup-config-cache.outputs.cache-hit == false }}"
-        uses: "actions/cache/save@9255dc7a253b0ccc959486e2bca901246202afeb" # v5.0.1
+        uses: "actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9" # v6.1.0
         with:
           path: ".create-pr-config.raw.json"
           key: "${{ steps.lookup-config-cache.outputs.cache-primary-key }}"
@@ -239,7 +239,7 @@ jobs:
           rm ./pandoc.deb
 
       - name: "Checkout the repository"
-        uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd" # v6.0.2
+        uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" # v7.0.1
         with:
           ref: "${{ fromJSON(inputs.config).branch-from || env.default-branch-from }}"
           fetch-depth: 0
@@ -256,7 +256,7 @@ jobs:
 
       - name: "Setup the requested Python version"
         if: "${{ fromJSON(inputs.config).python-version != '' && fromJSON(inputs.config).python-version != env.PYTHON_VERSION }}"
-        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
+        uses: "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0" # v7.1.0
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
         with:
@@ -274,7 +274,7 @@ jobs:
 
       - name: "Setup Python for commit generation"
         if: "${{ fromJSON(inputs.config).python-version != '' && fromJSON(inputs.config).python-version != env.PYTHON_VERSION }}"
-        uses: "actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548" # v6.1.0
+        uses: "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0" # v7.1.0
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
         with:
